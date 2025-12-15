@@ -1,0 +1,30 @@
+# Node modules - will be installed on VPS
+node_modules/
+
+# Environment files - should be created on VPS
+.env
+.env.local
+.env.production
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+

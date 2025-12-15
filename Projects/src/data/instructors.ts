@@ -1,0 +1,68 @@
+import { Instructor } from '@/types'
+
+export const mockInstructors: Instructor[] = [
+  {
+    id: '1',
+    userId: 'user-1',
+    title: 'Tiến sĩ',
+    credentials: 'Tiến sĩ Tâm lý học Phát triển, Đại học Quốc gia Hà Nội',
+    bio: 'Hơn 15 năm kinh nghiệm nghiên cứu và giảng dạy về phát triển tâm lý trẻ em. Chuyên gia hàng đầu trong lĩnh vực nuôi dạy con.',
+    user: {
+      id: 'user-1',
+      email: 'nguyen.van.a@ipd8.vn',
+      name: 'TS. Nguyễn Văn A',
+      avatarUrl: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&h=400&fit=crop',
+      role: 'instructor',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z',
+    },
+  },
+  {
+    id: '2',
+    userId: 'user-2',
+    title: 'Thạc sĩ',
+    credentials: 'Thạc sĩ Dinh dưỡng, Học viện Dinh dưỡng TP.HCM',
+    bio: '10 năm kinh nghiệm tư vấn dinh dưỡng cho mẹ bầu và trẻ nhỏ. Tác giả nhiều bài viết chuyên môn về dinh dưỡng.',
+    user: {
+      id: 'user-2',
+      email: 'tran.thi.b@ipd8.vn',
+      name: 'ThS. Trần Thị B',
+      avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=400&fit=crop',
+      role: 'instructor',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z',
+    },
+  },
+  {
+    id: '3',
+    userId: 'user-3',
+    title: 'Bác sĩ',
+    credentials: 'Bác sĩ Nhi khoa, Bệnh viện Nhi Trung ương',
+    bio: '12 năm kinh nghiệm khám và điều trị cho trẻ em. Chuyên gia về chăm sóc sức khỏe trẻ sơ sinh và nhũ nhi.',
+    user: {
+      id: 'user-3',
+      email: 'le.van.c@ipd8.vn',
+      name: 'BS. Lê Văn C',
+      avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&fit=crop',
+      role: 'instructor',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z',
+    },
+  },
+  {
+    id: '4',
+    userId: 'user-4',
+    title: 'Giảng viên',
+    credentials: 'Cử nhân Giáo dục Mầm non, Đại học Sư phạm Hà Nội',
+    bio: '8 năm kinh nghiệm giảng dạy và phát triển chương trình giáo dục sớm cho trẻ 0-6 tuổi.',
+    user: {
+      id: 'user-4',
+      email: 'pham.thi.d@ipd8.vn',
+      name: 'Phạm Thị D',
+      avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop',
+      role: 'instructor',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z',
+    },
+  },
+]

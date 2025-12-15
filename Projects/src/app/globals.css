@@ -1,0 +1,422 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 340 82% 14%;
+    --card: 0 0% 100%;
+    --card-foreground: 340 82% 14%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 340 82% 14%;
+    --primary: 340 82% 52%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 340 60% 97%;
+    --secondary-foreground: 340 82% 14%;
+    --muted: 340 40% 96%;
+    --muted-foreground: 340 20% 50%;
+    --accent: 340 60% 97%;
+    --accent-foreground: 340 82% 14%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 340 30% 90%;
+    --input: 340 30% 90%;
+    --ring: 340 82% 52%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 340 50% 8%;
+    --foreground: 0 0% 98%;
+    --card: 340 50% 8%;
+    --card-foreground: 0 0% 98%;
+    --popover: 340 50% 8%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 340 82% 62%;
+    --primary-foreground: 340 82% 14%;
+    --secondary: 340 40% 18%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 340 40% 18%;
+    --muted-foreground: 340 20% 65%;
+    --accent: 340 40% 18%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 340 40% 18%;
+    --input: 340 40% 18%;
+    --ring: 340 82% 62%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    box-sizing: border-box;
+  }
+  
+  html {
+    overflow-x: hidden !important;
+    overflow-y: auto;
+    width: 100%;
+    max-width: 100vw;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    overflow-x: hidden !important;
+    overflow-y: auto;
+    width: 100%;
+    max-width: 100vw;
+  }
+
+  /* Prevent any child from causing horizontal scroll */
+  body > * {
+    max-width: 100vw;
+  }
+
+  /* Force all sections to respect viewport width */
+  section,
+  main,
+  div[class*="section"],
+  div[class*="container"] {
+    max-width: 100vw;
+  }
+
+  /* Prevent images and media from overflowing */
+  img,
+  picture,
+  video,
+  iframe,
+  embed,
+  object {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+@layer components {
+  /* Navbar - prevent internal scrollbar */
+  header[class*="fixed"] {
+    overflow: visible !important;
+    max-width: 100vw !important;
+  }
+  
+  header[class*="fixed"] > * {
+    overflow: visible !important;
+    max-width: 100% !important;
+  }
+  
+  /* Navbar dropdowns - ensure they don't cause scrollbar */
+  header [class*="absolute"][class*="z-[9999]"] {
+    overflow: visible !important;
+  }
+  
+  /* Layout utilities */
+  .section-wrapper {
+    @apply py-12 md:py-16 lg:py-20;
+    position: relative;
+  }
+  
+  /* Ensure proper spacing between sections - no background interference */
+  .section-wrapper + .section-wrapper {
+    margin-top: 0;
+  }
+  
+  /* Ensure cards are above overlays when scaling */
+  [class*="hover:scale"] {
+    position: relative;
+    z-index: 20;
+  }
+  
+  .group.hover\:scale-105 {
+    position: relative;
+    z-index: 20;
+  }
+  
+  /* Grid containers need padding for shadows */
+  .grid[class*="gap"] {
+    padding: 8px;
+  }
+  
+  /* Ensure card shadows are not clipped - cards themselves don't need margin */
+  [class*="Card"],
+  [class*="card"] {
+    position: relative;
+  }
+  
+  /* Add space for shadow on hover scale */
+  .group.hover\:scale-105[class*="shadow"] {
+    transform-origin: center;
+  }
+  
+  /* Ensure parent containers allow shadow visibility - use padding instead */
+  /* Note: :has() selector may not work in all browsers, so we use padding on containers */
+
+  .container-custom {
+    @apply container mx-auto px-4 sm:px-6 lg:px-8;
+    max-width: 100%;
+    overflow-x: visible;
+  }
+
+  .hero-section {
+    @apply bg-gradient-to-r from-[#F441A5] to-[#FF5F6D] text-white;
+  }
+  
+  .gradient-primary {
+    @apply bg-gradient-to-r from-[#F441A5] to-[#FF5F6D];
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+  }
+
+  /* Custom scrollbar */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Swiper Custom Styles */
+  .swiper-pagination-bullet {
+    @apply bg-[#F441A5] opacity-50;
+  }
+  
+  .swiper-pagination-bullet-active {
+    @apply opacity-100;
+  }
+
+  .swiper-button-next,
+  .swiper-button-prev {
+    @apply text-[#F441A5];
+  }
+
+  /* Parallax scrolling - disable on mobile for performance */
+  @media (max-width: 768px) {
+    [style*="background-attachment: fixed"] {
+      background-attachment: scroll !important;
+    }
+  }
+
+  /* Swiper equal height slides */
+  .swiper-wrapper {
+    display: flex !important;
+    align-items: stretch !important;
+  }
+  
+  .swiper-slide {
+    height: auto !important;
+    display: flex !important;
+    align-items: stretch !important;
+  }
+  
+  .swiper-slide > * {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Ensure all cards in swiper have same height */
+  .swiper-slide .card,
+  .swiper-slide [class*="card"],
+  .swiper-slide [class*="Card"] {
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+  
+  /* Ensure swiper slides don't overflow */
+  .swiper-slide {
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+  
+  .swiper-wrapper {
+    max-width: 100% !important;
+  }
+
+  /* Preserve border-radius on scale transform */
+  .preserve-radius {
+    transform-origin: center;
+    border-radius: 1rem !important;
+  }
+  
+  .preserve-radius:hover {
+    border-radius: 1rem !important;
+  }
+  
+  /* Fix border-radius when scaling cards */
+  .group.hover\:scale-105,
+  [class*="hover:scale"] {
+    transform-origin: center center;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    will-change: transform;
+  }
+  
+  /* Ensure rounded corners are preserved on scale */
+  .rounded-2xl,
+  [class*="rounded-2xl"] {
+    border-radius: 1rem !important;
+  }
+  
+  .rounded-2xl:hover,
+  [class*="rounded-2xl"]:hover {
+    border-radius: 1rem !important;
+  }
+  
+  /* Fix for cards with scale transform */
+  .group.hover\:scale-105.rounded-2xl,
+  [class*="hover:scale-105"][class*="rounded-2xl"] {
+    border-radius: 1rem !important;
+    overflow: hidden !important;
+  }
+  
+  .group.hover\:scale-105.rounded-2xl:hover,
+  [class*="hover:scale-105"][class*="rounded-2xl"]:hover {
+    border-radius: 1rem !important;
+  }
+
+  /* Hero Swiper specific styles */
+  .hero-swiper {
+    overflow: hidden !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  .hero-swiper .swiper-wrapper {
+    overflow: hidden !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  .hero-swiper .swiper-slide {
+    overflow: hidden !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  /* Ensure hero section doesn't overflow */
+  section.gradient-primary {
+    overflow: hidden !important;
+    position: relative;
+  }
+
+  /* Swiper container with shadow support */
+  .swiper-container {
+    padding: 20px 16px !important;
+    overflow: visible !important;
+  }
+  
+  .swiper-container .swiper-wrapper {
+    overflow: visible !important;
+  }
+  
+  /* Remove duplicate swiper-container rules - use the one above */
+
+  /* Prevent hover scale from causing scroll */
+  .group:hover {
+    will-change: transform;
+  }
+
+  /* Ensure no overflow on grid containers */
+  .grid {
+    width: 100%;
+  }
+
+  .grid > * {
+    min-width: 0;
+  }
+
+  /* Minimum line spacing: Ensure Vietnamese diacritics are not cut off */
+  /* Apply to headings and paragraphs that may wrap to multiple lines */
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.4;
+    padding-top: 0.1em;
+    padding-bottom: 0.1em;
+  }
+
+  /* For paragraphs and text blocks, ensure proper line spacing when wrapping */
+  p {
+    line-height: 1.6;
+    padding-top: 0.05em;
+    padding-bottom: 0.05em;
+  }
+  
+  /* Ensure Vietnamese text has enough space for diacritics */
+  body, html {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Fix line-clamp to preserve diacritics */
+  [class*="line-clamp"] {
+    line-height: 1.5 !important;
+    padding-top: 0.15em !important;
+    padding-bottom: 0.15em !important;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  /* Ensure truncate doesn't cut diacritics */
+  .truncate {
+    line-height: 1.5 !important;
+    padding-top: 0.1em !important;
+    padding-bottom: 0.1em !important;
+  }
+  
+  /* Override inline lineHeight styles to prevent diacritic cutoff */
+  [style*="lineHeight: '1.2'"],
+  [style*="lineHeight: \"1.2\""],
+  [style*="line-height: 1.2"] {
+    line-height: 1.4 !important;
+    padding-top: 0.1em !important;
+    padding-bottom: 0.1em !important;
+  }
+  
+  /* Ensure all headings have enough space for Vietnamese diacritics */
+  h1[style*="lineHeight"],
+  h2[style*="lineHeight"],
+  h3[style*="lineHeight"],
+  h4[style*="lineHeight"],
+  h5[style*="lineHeight"],
+  h6[style*="lineHeight"] {
+    line-height: 1.4 !important;
+    padding-top: 0.1em !important;
+    padding-bottom: 0.1em !important;
+  }
+
+  /* For text blocks with explicit line breaks or block elements, ensure spacing */
+  /* When using <br /> or block spans, add margin-top: 0.2em */
+  .line-spacing-min {
+    line-height: 1.5;
+    padding-top: 0.1em;
+    padding-bottom: 0.1em;
+  }
+
+  .line-spacing-min > * + * {
+    margin-top: 0.2em;
+  }
+  
+  /* Ensure all text containers have space for Vietnamese diacritics */
+  span, div, p, h1, h2, h3, h4, h5, h6, a, button, label {
+    line-height: inherit;
+  }
+  
+  /* Fix for elements with fixed min-height that might cut diacritics */
+  [class*="min-h-"] {
+    padding-top: 0.1em;
+    padding-bottom: 0.1em;
+  }
+}
+

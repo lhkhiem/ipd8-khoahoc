@@ -394,20 +394,23 @@
 ---
 
 ## 17. Bảng: `settings`
-**Mục đích:** Cài đặt hệ thống
+**Mục đích:** Cài đặt hệ thống cho cả CMS và IPD8 (dùng chung)
 
 | Cột | Kiểu dữ liệu | Ràng buộc | Mô tả |
 |-----|--------------|-----------|-------|
 | id | UUID/STRING | PRIMARY KEY | ID duy nhất |
-| key | VARCHAR(100) | UNIQUE, NOT NULL | Key cài đặt |
-| value | TEXT | NULL | Giá trị |
-| type | VARCHAR(50) | NOT NULL | Loại (string, number, boolean, json) |
-| description | TEXT | NULL | Mô tả |
-| created_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Ngày tạo |
+| namespace | VARCHAR(100) | UNIQUE, NOT NULL | Namespace: 'general', 'appearance', 'security', 'seo', 'ipd8', 'courses', 'payments' |
+| value | JSONB | NOT NULL, DEFAULT '{}' | Giá trị cài đặt (JSON object) |
 | updated_at | TIMESTAMP | NOT NULL, DEFAULT NOW() | Ngày cập nhật |
 
 **Indexes:**
-- `idx_settings_key` trên `key`
+- `uq_settings_namespace` trên `namespace` (UNIQUE)
+
+**Lưu ý:**
+- Bảng `settings` này dùng chung cho cả CMS và IPD8, sử dụng cấu trúc `namespace` + `value` (JSONB) để lưu trữ các cài đặt theo nhóm.
+- **Namespace CMS:** 'general', 'appearance', 'email', 'security', 'seo', 'notifications', 'advanced', 'homepage_metrics'
+- **Namespace IPD8:** 'ipd8', 'courses', 'payments', 'instructors', 'enrollments' (có thể thêm tùy nhu cầu)
+- Mỗi namespace chứa một JSON object với nhiều settings liên quan, giúp tổ chức và quản lý dễ dàng hơn so với key-value đơn lẻ.
 
 ---
 
@@ -456,6 +459,7 @@ posts (1) ──< (*) post_tags
 6. **Audit Trail:** Có thể thêm `created_by`, `updated_by` để tracking
 7. **Full-text Search:** Thêm index full-text cho `title`, `content` nếu cần
 8. **File Storage:** Sử dụng S3 hoặc tương tự, lưu `file_key` và `file_url`
+9. **Settings:** Bảng `settings` dùng chung cho cả CMS và IPD8, sử dụng `namespace` + `value` (JSONB) để tổ chức settings theo nhóm
 
 ---
 

@@ -34,7 +34,11 @@ Projects/.turbo/
 Projects/dist/
 Projects/out/
 
-
+# Shared storage - ignore uploaded/temp files but keep structure helpers
+shared-storage/uploads/**
+!shared-storage/uploads/.gitkeep
+shared-storage/temp/**
+!shared-storage/temp/.gitkeep
 
 
 

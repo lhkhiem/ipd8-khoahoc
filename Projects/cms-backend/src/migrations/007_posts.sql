@@ -1,0 +1,3 @@
+-- Migration 007: Ensure posts table (handled by 001_init_schema)
+-- This migration is a no-op to avoid conflicts.
+-- The posts table is created in 001_init_schema.sql with correct UUID schema.

@@ -1,5 +1,5 @@
 // Public Auth Routes
-// Customer authentication endpoints
+// IPD8: Guest/Student authentication endpoints
 
 import { Router } from 'express';
 import * as authController from '../controllers/public/authController';

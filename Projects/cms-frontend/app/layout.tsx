@@ -22,8 +22,8 @@ const roboto = Roboto({
 });
 
 export const metadata: Metadata = {
-  title: "Banyco CMS - Bảng điều khiển",
-  description: "Hệ thống quản lý nội dung hiện đại",
+  title: `${process.env.NEXT_PUBLIC_SITE_NAME || 'CMS'} - Bảng điều khiển`,
+  description: process.env.NEXT_PUBLIC_SITE_DESCRIPTION || "Hệ thống quản lý nội dung hiện đại",
 };
 
 // DOM patch is now imported from @/lib/dom-safe-patch
@@ -65,7 +65,7 @@ export default function RootLayout({
       <body className={`${inter.className} ${roboto.variable}`}>
         <DOMPatchScript />
         <FaviconProvider />
-        <ThemeProvider defaultTheme="light" storageKey="pressup-cms-theme">
+        <ThemeProvider defaultTheme="light" storageKey={`${process.env.NEXT_PUBLIC_SITE_NAME || 'cms'}-theme`}>
           <AppearanceProvider>
             {children}
           </AppearanceProvider>

@@ -30,6 +30,18 @@ class EmailService {
   async loadConfig(): Promise<EmailConfig | null> {
     try {
       console.log('[EmailService] Loading email configuration from database...');
+      
+      // Check if database connection is ready
+      try {
+        await sequelize.authenticate();
+      } catch (authError: any) {
+        // Database not ready yet - this is OK, will retry later
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[EmailService] Database not ready yet, will retry later:', authError.message);
+        }
+        return null;
+      }
+      
       const result: any = await sequelize.query(
         "SELECT value FROM settings WHERE namespace = 'email'",
         { type: 'SELECT' as any }
@@ -272,9 +284,14 @@ class EmailService {
 // Export singleton instance
 export const emailService = new EmailService();
 
-// Initialize on module load
+// Initialize on module load (but don't fail if database not ready)
+// EmailService will retry when actually needed
 emailService.initialize().catch((error) => {
-  console.error('[EmailService] Failed to initialize:', error);
+  // Don't log as error - this is expected if database is not ready yet
+  // EmailService will retry when sendEmail is called
+  if (process.env.NODE_ENV === 'development') {
+    console.warn('[EmailService] Initialization deferred (database may not be ready):', error.message);
+  }
 });
 
 

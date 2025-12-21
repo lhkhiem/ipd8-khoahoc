@@ -63,7 +63,7 @@ export const submitContact = async (req: Request, res: Response) => {
         { type: 'SELECT' as any }
       );
       const generalSettings = settingsResult?.[0]?.value || {};
-      const adminEmail = generalSettings.adminEmail || 'admin@pressup.com';
+      const adminEmail = generalSettings.adminEmail || process.env.ADMIN_EMAIL || process.env.SMTP_USER || '';
 
       const contactData = {
         firstName: firstName.trim(),

@@ -62,7 +62,7 @@ GET /api/brands                        # Existing (now supports is_featured)
 
 ### Get Featured Products
 ```bash
-curl http://localhost:3011/api/products/featured?limit=6
+curl http://localhost:3103/api/products/featured?limit=6
 ```
 
 **Response:**
@@ -84,17 +84,17 @@ curl http://localhost:3011/api/products/featured?limit=6
 
 ### Get Best Sellers
 ```bash
-curl http://localhost:3011/api/products/best-sellers?limit=6
+curl http://localhost:3103/api/products/best-sellers?limit=6
 ```
 
 ### Get Featured Categories
 ```bash
-curl "http://localhost:3011/api/product-categories?featured_only=true"
+curl "http://localhost:3103/api/product-categories?featured_only=true"
 ```
 
 ### Get Featured Brands
 ```bash
-curl "http://localhost:3011/api/brands?featured_only=true"
+curl "http://localhost:3103/api/brands?featured_only=true"
 ```
 
 ---

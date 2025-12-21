@@ -21,13 +21,29 @@ const fadeInUp = {
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
   const { login } = useAuth()
   const router = useRouter()
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Temporary login - just login with any email
-    login(email || 'user@example.com')
+    setError('')
+    
+    if (!email || !password) {
+      setError('Vui lòng nhập đầy đủ email và mật khẩu')
+      return
+    }
+
+    setIsLoading(true)
+    const result = await login(email, password)
+    setIsLoading(false)
+
+    if (result.success) {
+      router.push('/dashboard')
+    } else {
+      setError(result.error || 'Đăng nhập thất bại. Vui lòng thử lại.')
+    }
   }
 
   return (
@@ -104,6 +120,12 @@ export default function LoginPage() {
                     </div>
                   </div>
 
+                  {error && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                      {error}
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between text-sm">
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input type="checkbox" className="w-4 h-4 text-[#F441A5]" />
@@ -116,10 +138,11 @@ export default function LoginPage() {
 
                   <Button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-[#F441A5] to-[#FF5F6D] text-white hover:opacity-90 hover:scale-105 transition-all duration-200 py-6 text-lg font-semibold"
+                    disabled={isLoading}
+                    className="w-full bg-gradient-to-r from-[#F441A5] to-[#FF5F6D] text-white hover:opacity-90 hover:scale-105 transition-all duration-200 py-6 text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Đăng nhập
-                    <ArrowRight className="ml-2 h-5 w-5" />
+                    {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+                    {!isLoading && <ArrowRight className="ml-2 h-5 w-5" />}
                   </Button>
                 </form>
 

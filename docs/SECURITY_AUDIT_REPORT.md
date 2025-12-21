@@ -725,3 +725,13 @@ Nếu phát hiện lỗ hổng bảo mật:
 **Last Updated:** 2025-01-XX  
 **Status:** 🔴 CẦN HÀNH ĐỘNG NGAY
 
+
+
+
+
+
+
+
+
+
+

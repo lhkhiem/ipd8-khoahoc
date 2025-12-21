@@ -6,6 +6,7 @@
 import { create } from 'zustand';
 import axios from 'axios';
 import { resolveApiBaseUrl } from '../lib/api';
+// Note: Có thể dùng axiosInstance từ lib/axios.ts trong tương lai để tự động withCredentials
 interface LoginResponse {
   user: User;
 }

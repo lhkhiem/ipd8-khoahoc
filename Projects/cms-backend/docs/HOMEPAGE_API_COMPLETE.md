@@ -162,7 +162,7 @@ Deprecated – use `GET /api/sliders?active_only=true`.
 
 ```bash
 # Create testimonial
-curl -X POST http://localhost:3011/api/homepage/testimonials \
+curl -X POST http://localhost:3103/api/homepage/testimonials \
   -H "Content-Type: application/json" \
   -d '{
     "customer_name": "Laura W.",
@@ -174,7 +174,7 @@ curl -X POST http://localhost:3011/api/homepage/testimonials \
   }'
 
 # Get featured testimonials
-curl http://localhost:3011/api/homepage/testimonials?featured_only=true
+curl http://localhost:3103/api/homepage/testimonials?featured_only=true
 ```
 
 ---

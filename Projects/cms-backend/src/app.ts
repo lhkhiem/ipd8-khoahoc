@@ -16,9 +16,10 @@ import authRoutes from './routes/auth';
 import postRoutes from './routes/posts';
 import topicRoutes from './routes/topics';
 import tagRoutes from './routes/tags';
-import productRoutes from './routes/products';
-import productCategoryRoutes from './routes/productCategories';
-import brandRoutes from './routes/brands';
+// Legacy e-commerce routes removed - products, categories, brands moved to dedicated backend
+// import productRoutes from './routes/products';
+// import productCategoryRoutes from './routes/productCategories';
+// import brandRoutes from './routes/brands';
 import assetRoutes from './routes/assets';
 import usersRoutes from './routes/users'; // Admin users for post authors
 import settingsRoutes from './routes/settings';
@@ -27,7 +28,8 @@ import healthRoutes from './routes/health';
 import menuLocationRoutes from './routes/menuLocations';
 import menuItemRoutes from './routes/menuItems';
 // import cartRoutes from './routes/cart'; // Disabled: Customer cart management not needed
-import orderRoutes from './routes/orders'; // Admin order management (not customer management)
+// Legacy e-commerce order routes removed - orders moved to dedicated backend
+// import orderRoutes from './routes/orders';
 // Ecommerce routes - COMMENTED (moved to Ecommerce Backend)
 // import paymentRoutes from './routes/payments'; // Moved to Ecommerce Backend
 // import wishlistRoutes from './routes/wishlist'; // Disabled: Customer wishlist management not needed
@@ -45,8 +47,9 @@ import consultationRoutes from './routes/consultations';
 import emailRoutes from './routes/email';
 // Ecommerce routes - COMMENTED (moved to Ecommerce Backend)
 // import publicProductsRoutes from './routes/publicProducts'; // Moved to Ecommerce Backend
-// import publicAuthRoutes from './routes/publicAuth'; // Moved to Ecommerce Backend
-import inventoryRoutes from './routes/inventory'; // Inventory management
+import publicAuthRoutes from './routes/publicAuth'; // IPD8: Public auth for guests/students
+// Legacy e-commerce inventory routes removed - inventory moved to dedicated backend
+// import inventoryRoutes from './routes/inventory';
 import activityLogRoutes from './routes/activityLogs'; // Activity tracking
 import syncMetadataRoutes from './routes/syncMetadata'; // Metadata sync
 import debugSeoRoutes from './routes/debugSeo'; // Debug SEO
@@ -57,6 +60,13 @@ import newsletterRoutes from './routes/newsletter'; // Admin newsletter manageme
 // import publicUserRoutes from './routes/publicUser'; // Disabled: Customer user management not needed
 // import publicOrdersRoutes from './routes/publicOrders'; // Disabled: Customer orders not needed
 // import publicCartRoutes from './routes/publicCart'; // Disabled: Customer cart not needed
+// IPD8 Routes
+import instructorRoutes from './routes/instructors';
+import courseRoutes from './routes/courses';
+import enrollmentRoutes from './routes/enrollments';
+import orderRoutes from './routes/orders'; // IPD8 orders (not e-commerce)
+import paymentRoutes from './routes/payments'; // IPD8 payments
+import notificationRoutes from './routes/notifications';
 
 // Environment variables đã được load bởi './utils/loadEnv' ở đầu file
 
@@ -478,9 +488,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/topics', topicRoutes);
 app.use('/api/tags', tagRoutes);
-app.use('/api/product-categories', productCategoryRoutes);
-app.use('/api/brands', brandRoutes);
-app.use('/api/products', productRoutes);
+// Legacy e-commerce routes removed
+// app.use('/api/product-categories', productCategoryRoutes);
+// app.use('/api/brands', brandRoutes);
+// app.use('/api/products', productRoutes);
 app.use('/api/assets', assetRoutes);
 app.use('/api/users', usersRoutes); // Admin users for post authors
 app.use('/api/settings', settingsRoutes);
@@ -532,7 +543,8 @@ app.use('/api/public/page-metadata', (req, res, next) => {
 app.use('/api/contacts', contactRoutes);
 app.use('/api/consultations', consultationRoutes);
 app.use('/api/email', emailRoutes);
-app.use('/api/inventory', inventoryRoutes);
+// Legacy e-commerce inventory routes removed
+// app.use('/api/inventory', inventoryRoutes);
 app.use('/api/sync-metadata', syncMetadataRoutes);
 app.use('/api/menu-locations', menuLocationRoutes);
 app.use('/api/menu-items', menuItemRoutes);
@@ -549,14 +561,20 @@ app.use('/api/faqs', faqRoutes);
 // Ecommerce routes - COMMENTED (moved to Ecommerce Backend)
 // These routes are now handled by Ecommerce Backend (port 3012)
 // app.use('/api/public/products', publicProductsRoutes); // Moved to Ecommerce Backend
-// app.use('/api/public/auth', publicAuthRoutes); // Moved to Ecommerce Backend
+app.use('/api/public/auth', publicAuthRoutes); // IPD8: Public auth for guests/students
 // app.use('/api/payments', paymentRoutes); // Moved to Ecommerce Backend (or keep if CMS needs to manage payments)
 app.use('/api/newsletter', newsletterRoutes); // Admin newsletter management (public routes moved to Ecommerce Backend)
 
-// Orders: Admin management only (public routes moved to Ecommerce Backend)
-// Note: orderRoutes contains both public (POST, GET lookup) and admin (GET, PUT, DELETE) routes
-// Public routes are handled by Ecommerce Backend, admin routes remain here
-app.use('/api/orders', orderRoutes); // Admin order management (public routes handled by Ecommerce Backend)
+// IPD8 Routes
+app.use('/api/instructors', instructorRoutes);
+app.use('/api/courses', courseRoutes);
+app.use('/api/enrollments', enrollmentRoutes);
+app.use('/api/orders', orderRoutes); // IPD8 orders (not e-commerce)
+app.use('/api/payments', paymentRoutes); // IPD8 payments
+app.use('/api/notifications', notificationRoutes);
+
+// Orders: Legacy e-commerce order routes removed - orders moved to dedicated backend
+// Note: IPD8 orders are now handled above
 
 // Ensure upload and temp dirs on boot and serve uploads
 (async () => {
@@ -591,21 +609,21 @@ app.use('/api/orders', orderRoutes); // Admin order management (public routes ha
 
 export async function ready() {
   await sequelize.authenticate();
-  // Ensure one owner exists
+  // Ensure one admin exists (role can be 'guest', 'student', 'instructor', or 'admin')
   try {
-    const [owner] = await sequelize.query(`SELECT id FROM users WHERE role = 'owner' LIMIT 1`, { type: 'SELECT' as any });
-    if (!(owner as any)?.id) {
+    const [admin] = await sequelize.query(`SELECT id FROM users WHERE role = 'admin' LIMIT 1`, { type: 'SELECT' as any });
+    if (!(admin as any)?.id) {
       const first: any = await sequelize.query(`SELECT id FROM users ORDER BY created_at ASC LIMIT 1`, { type: 'SELECT' as any });
       const id = (first as any[])[0]?.id;
       if (id) {
-        await sequelize.query(`UPDATE users SET role = 'owner' WHERE id = :id`, { type: 'UPDATE' as any, replacements: { id } });
+        await sequelize.query(`UPDATE users SET role = 'admin' WHERE id = :id`, { type: 'UPDATE' as any, replacements: { id } });
         // eslint-disable-next-line no-console
-        console.log('Promoted earliest user to owner');
+        console.log('Promoted earliest user to admin');
       }
     }
   } catch (e) {
     // eslint-disable-next-line no-console
-    console.warn('Owner bootstrap failed or skipped:', e);
+    console.warn('Admin bootstrap failed or skipped:', e);
   }
 }
 

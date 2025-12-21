@@ -1,39 +1,19 @@
-import express from 'express';
-import * as orderController from '../controllers/orderController';
-import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { Router } from 'express';
+import { authMiddleware } from '../middleware/auth';
+import {
+  getOrders,
+  getOrderById,
+  createOrder,
+  updateOrder,
+  payOrder,
+} from '../controllers/orderController';
 
-const router = express.Router();
+const router = Router();
 
-// Public routes - create order and lookup
-// IMPORTANT: Specific routes (/phone/:phone, /number/:order_number) must come before generic routes (/:id)
-router.post('/', orderController.createOrder);
-router.get('/number/:order_number', orderController.getOrderByNumber);
-router.get('/phone/:phone', (req, res, next) => {
-  console.log('[Orders Router] /phone/:phone route matched, phone:', req.params.phone);
-  next();
-}, orderController.getOrdersByPhone); // Lookup orders by phone number
-
-// Protected routes - require auth (admin only)
-router.get('/', authMiddleware, orderController.getOrders);
-router.get('/:id', authMiddleware, orderController.getOrderById);
-router.put('/:id', authMiddleware, orderController.updateOrder);
-router.delete('/:id', authMiddleware, orderController.deleteOrder);
+router.get('/', authMiddleware, getOrders);
+router.get('/:id', authMiddleware, getOrderById);
+router.post('/', authMiddleware, createOrder);
+router.put('/:id', authMiddleware, updateOrder);
+router.post('/:id/pay', authMiddleware, payOrder);
 
 export default router;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

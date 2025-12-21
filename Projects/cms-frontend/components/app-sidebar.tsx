@@ -16,15 +16,8 @@ import {
   Tags,
   ChevronRight,
   ChevronLeft,
-  Package,
-  Grid3x3,
-  Tag,
-  PackageOpen,
   Menu,
-  // ShoppingCart, // Disabled: Customer cart management not needed
-  Receipt, // Orders for admin management
-  // Heart, // Disabled: Customer wishlist management not needed
-  // Star, // Disabled: Customer review management not needed
+  Receipt,
   Code,
   Sparkles,
   MessageSquareQuote,
@@ -32,6 +25,12 @@ import {
   PhoneCall,
   Info,
   HelpCircle,
+  BookOpen,
+  GraduationCap,
+  Calendar,
+  CreditCard,
+  UserCheck,
+  Bell,
 } from 'lucide-react';
 
 // Sidebar Context
@@ -49,7 +48,12 @@ export const useSidebar = () => useContext(SidebarContext);
 
 // Sidebar Provider Component
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  // Initialize collapsed state from localStorage (only on desktop)
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const saved = localStorage.getItem('sidebar-collapsed');
+    return saved !== null ? JSON.parse(saved) : false;
+  });
   const [isMobile, setIsMobile] = useState(false);
 
   // Detect mobile screen size
@@ -67,16 +71,6 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
-
-  // Load collapsed state from localStorage (only on desktop)
-  useEffect(() => {
-    if (!isMobile) {
-      const saved = localStorage.getItem('sidebar-collapsed');
-      if (saved !== null) {
-        setIsCollapsed(JSON.parse(saved));
-      }
-    }
-  }, [isMobile]);
 
   // Save collapsed state to localStorage (only on desktop)
   useEffect(() => {
@@ -113,15 +107,50 @@ const navigation = [
     ],
   },
   {
-    title: 'Content',
+    title: 'Quản lý Khóa học',
     items: [
       {
-        title: 'Posts',
+        title: 'Danh sách khóa học',
+        href: '/dashboard/courses',
+        icon: BookOpen,
+      },
+      {
+        title: 'Giảng viên',
+        href: '/dashboard/instructors',
+        icon: GraduationCap,
+      },
+      {
+        title: 'Lịch học',
+        href: '/dashboard/schedule',
+        icon: Calendar,
+      },
+    ],
+  },
+  {
+    title: 'Quản lý Người dùng',
+    items: [
+      {
+        title: 'Người dùng',
+        href: '/dashboard/users',
+        icon: Users,
+      },
+      {
+        title: 'Đăng ký khóa học',
+        href: '/dashboard/enrollments',
+        icon: UserCheck,
+      },
+    ],
+  },
+  {
+    title: 'Quản lý Nội dung',
+    items: [
+      {
+        title: 'Bài viết',
         href: '/dashboard/posts',
         icon: FileText,
       },
       {
-        title: 'Topics',
+        title: 'Chủ đề',
         href: '/dashboard/topics',
         icon: Folder,
       },
@@ -130,49 +159,38 @@ const navigation = [
         href: '/dashboard/tags',
         icon: Tags,
       },
-    ],
-  },
-  {
-    title: 'Products',
-    items: [
       {
-        title: 'All Products',
-        href: '/dashboard/products',
-        icon: Package,
-      },
-      {
-        title: 'Categories',
-        href: '/dashboard/products/categories',
-        icon: Grid3x3,
-      },
-      {
-        title: 'Brands',
-        href: '/dashboard/products/brands',
-        icon: Tag,
-      },
-      {
-        title: 'Inventory',
-        href: '/dashboard/products/inventory',
-        icon: PackageOpen,
+        title: 'FAQs',
+        href: '/dashboard/faqs',
+        icon: HelpCircle,
       },
     ],
   },
-  // E-Commerce section - Only Orders (admin management, not customer management)
   {
-    title: 'E-Commerce',
+    title: 'Quản lý Thanh toán',
     items: [
       {
-        title: 'Orders',
+        title: 'Đơn hàng',
         href: '/dashboard/orders',
         icon: Receipt,
       },
       {
-        title: 'Contact Messages',
+        title: 'Thanh toán',
+        href: '/dashboard/payments',
+        icon: CreditCard,
+      },
+    ],
+  },
+  {
+    title: 'Quản lý Liên hệ',
+    items: [
+      {
+        title: 'Tin nhắn liên hệ',
         href: '/dashboard/contacts',
         icon: Mail,
       },
       {
-        title: 'Consultations',
+        title: 'Tư vấn',
         href: '/dashboard/consultations',
         icon: PhoneCall,
       },
@@ -181,41 +199,30 @@ const navigation = [
         href: '/dashboard/newsletter',
         icon: Mail,
       },
+    ],
+  },
+  {
+    title: 'Quản lý Thông báo',
+    items: [
       {
-        title: 'FAQs',
-        href: '/dashboard/faqs',
-        icon: HelpCircle,
+        title: 'Thông báo',
+        href: '/dashboard/notifications',
+        icon: Bell,
       },
-      // Disabled: Customer management features not needed
-      // {
-      //   title: 'Shopping Cart',
-      //   href: '/dashboard/cart',
-      //   icon: ShoppingCart,
-      // },
-      // {
-      //   title: 'Wishlists',
-      //   href: '/dashboard/wishlist',
-      //   icon: Heart,
-      // },
-      // {
-      //   title: 'Reviews',
-      //   href: '/dashboard/reviews',
-      //   icon: Star,
-      // },
     ],
   },
   {
     title: 'Media',
     items: [
       {
-        title: 'Media Library',
+        title: 'Thư viện Media',
         href: '/dashboard/media',
         icon: Image,
       },
     ],
   },
   {
-    title: 'Appearance',
+    title: 'Giao diện',
     items: [
       {
         title: 'Sliders',
@@ -238,7 +245,7 @@ const navigation = [
         icon: Menu,
       },
       {
-        title: 'About Page',
+        title: 'Trang Giới thiệu',
         href: '/dashboard/about',
         icon: Info,
       },
@@ -255,22 +262,17 @@ const navigation = [
     ],
   },
   {
-    title: 'System',
+    title: 'Hệ thống',
     items: [
       {
-        title: 'Users & Roles',
-        href: '/dashboard/users',
-        icon: Users,
+        title: 'Cài đặt',
+        href: '/dashboard/settings',
+        icon: Settings,
       },
       {
         title: 'Tracking Scripts',
         href: '/dashboard/tracking-scripts',
         icon: Code,
-      },
-      {
-        title: 'Settings',
-        href: '/dashboard/settings',
-        icon: Settings,
       },
     ],
   },
@@ -322,7 +324,7 @@ export function AppSidebar() {
               )}
               {!isCollapsed && (
                 <span className="text-lg font-semibold text-sidebar-foreground whitespace-nowrap">
-                  Banyco CMS
+                  {process.env.NEXT_PUBLIC_SITE_NAME || 'CMS'}
                 </span>
               )}
             </Link>
@@ -390,7 +392,7 @@ export function AppSidebar() {
         {!isCollapsed && (
           <div className="border-t border-sidebar-border p-4">
             <div className="text-xs text-sidebar-foreground/50 text-center">
-              Được phát hành bởi <span className="font-semibold">Pressup.vn</span>
+              {process.env.NEXT_PUBLIC_COMPANY_NAME ? `Được phát hành bởi <span className="font-semibold">${process.env.NEXT_PUBLIC_COMPANY_NAME}</span>` : ''}
             </div>
           </div>
         )}

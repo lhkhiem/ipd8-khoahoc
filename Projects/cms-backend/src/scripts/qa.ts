@@ -5,9 +5,9 @@ type Result = { name: string; ok: boolean; detail?: string };
 function request(method: string, path: string, body?: any, headers: Record<string, string> = {}): Promise<{ status: number; body: any; headers: http.IncomingHttpHeaders }>{
   return new Promise((resolve, reject) => {
     const data = body ? Buffer.from(JSON.stringify(body)) : undefined;
-    const baseUrl = process.env.BASE_URL || process.env.API_BASE_URL || 'http://localhost:3011';
+    const baseUrl = process.env.BASE_URL || process.env.API_BASE_URL || 'http://localhost:3103';
     let hostname = 'localhost';
-    let port = 3011;
+    let port = 3103;
     
     try {
       const url = new URL(baseUrl);

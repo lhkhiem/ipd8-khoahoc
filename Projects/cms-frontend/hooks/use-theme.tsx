@@ -25,7 +25,7 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 export function ThemeProvider({
   children,
   defaultTheme = 'system',
-  storageKey = 'pressup-cms-theme',
+  storageKey = `${process.env.NEXT_PUBLIC_SITE_NAME || 'cms'}-theme`,
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(

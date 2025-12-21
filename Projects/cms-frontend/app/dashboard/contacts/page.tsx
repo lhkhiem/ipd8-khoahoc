@@ -217,10 +217,9 @@ export default function ContactsPage() {
 
   const getSubjectLabel = (subject: string) => {
     const labels: Record<string, string> = {
-      product: 'Tư vấn sản phẩm',
-      order: 'Tình trạng đơn hàng',
+      course: 'Tư vấn',
+      enrollment: 'Đăng ký',
       support: 'Hỗ trợ kỹ thuật',
-      'spa-development': 'Dịch vụ phát triển Spa',
       partnership: 'Cơ hội hợp tác',
       other: 'Khác',
     };
@@ -273,10 +272,9 @@ export default function ContactsPage() {
           className="px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
         >
           <option value="">Tất cả chủ đề</option>
-          <option value="product">Tư vấn sản phẩm</option>
-          <option value="order">Tình trạng đơn hàng</option>
+          <option value="course">Tư vấn</option>
+          <option value="enrollment">Đăng ký</option>
           <option value="support">Hỗ trợ kỹ thuật</option>
-          <option value="spa-development">Dịch vụ phát triển Spa</option>
           <option value="partnership">Cơ hội hợp tác</option>
           <option value="other">Khác</option>
         </select>

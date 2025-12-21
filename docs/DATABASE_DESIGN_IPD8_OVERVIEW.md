@@ -25,8 +25,9 @@
 | **Bảng giữ nguyên** | 12 | Media, Menu, Settings (CMS & IPD8), Analytics, FAQ |
 | **Bảng tái cấu trúc** | 6 | Users, Posts, Topics, Tags, Contact, Newsletter |
 | **Bảng tạo mới (IPD8)** | 17 | Courses, Instructors, Enrollments, Orders, Payments, v.v. |
+| **Bảng bổ sung** | 2 | Activity Logs, Post Topics (junction table) |
 | **Bảng xóa bỏ** | 20 | E-commerce (Products, Cart, Wishlist, Inventory) - không dùng cho IPD8 |
-| **TỔNG CỘNG** | **35** | Bảng cuối cùng sau khi xóa bỏ (12 + 6 + 17) |
+| **TỔNG CỘNG** | **37** | Bảng cuối cùng sau khi xóa bỏ (12 + 6 + 17 + 2) |
 
 ### 1.2. Quy Ước
 
@@ -98,7 +99,19 @@
 | 16 | `webhook_logs` | Log webhook | [Chi tiết](./DATABASE_DESIGN_IPD8_TABLES_NEW.md#3316-bảng-webhook_logs) |
 | 17 | `api_request_logs` | Log API requests | [Chi tiết](./DATABASE_DESIGN_IPD8_TABLES_NEW.md#3317-bảng-api_request_logs) |
 
-### 2.4. Bảng Xóa Bỏ (20 bảng - E-commerce không dùng)
+### 2.4. Bảng Bổ Sung (2 bảng)
+
+| STT | Tên Bảng | Mục Đích | Nguồn |
+|-----|----------|----------|-------|
+| 1 | `activity_logs` | Theo dõi user actions và system events | CMS Backend |
+| 2 | `post_topics` | Junction table cho posts và topics (many-to-many) | CMS Backend |
+
+**Lưu ý:** 
+- `activity_logs`: Tạo trong CMS backend để track user actions, content changes và system events
+- `post_topics`: Junction table cho mối quan hệ many-to-many giữa `posts` và `topics` trong CMS
+- Xem chi tiết tại [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md#4-bảng-mới-được-thêm)
+
+### 2.5. Bảng Xóa Bỏ (20 bảng - E-commerce không dùng)
 
 | STT | Tên Bảng | Mục Đích | File Chi Tiết |
 |-----|----------|----------|---------------|
@@ -156,7 +169,8 @@
 - `posts` (tái cấu trúc)
 - `topics` (tái cấu trúc)
 - `tags` (tái cấu trúc)
-- `post_tags` (tạo mới - theo schema IPD8)
+- `post_tags` (tạo mới - theo schema IPD8, dùng `tag_name`)
+- `post_topics` (bổ sung - CMS, junction table)
 
 ### 3.5. Nhóm System & Settings
 
@@ -194,6 +208,7 @@
 - `webhooks` (tạo mới)
 - `webhook_logs` (tạo mới)
 - `api_request_logs` (tạo mới)
+- `activity_logs` (bổ sung - CMS)
 
 ---
 
@@ -209,7 +224,7 @@
 
 ### 4.2. Tài Liệu Gốc
 
-- **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** - Schema gốc của IPD8
+- **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** - Schema đầy đủ với 37 bảng
 - **[giai-phap-chuc-nang-cms-ipd8.md](./giai-phap-chuc-nang-cms-ipd8.md)** - Giải pháp CMS IPD8
 
 ---
@@ -222,8 +237,9 @@
 - **Bảng giữ nguyên:** 12 bảng (Media, Menu, Settings CMS & IPD8, Analytics, FAQ)
 - **Bảng tái cấu trúc:** 6 bảng (Users, Posts, Topics, Tags, Contact, Newsletter)
 - **Bảng tạo mới:** 17 bảng (Courses, Instructors, Enrollments, Orders, Payments, v.v.)
+- **Bảng bổ sung:** 2 bảng (Activity Logs, Post Topics)
 - **Bảng xóa bỏ:** 20 bảng (E-commerce - không dùng cho IPD8)
-- **Tổng số bảng cuối cùng:** 35 bảng (12 + 6 + 17)
+- **Tổng số bảng cuối cùng:** 37 bảng (12 + 6 + 17 + 2)
 
 ### 5.2. Điểm Quan Trọng
 

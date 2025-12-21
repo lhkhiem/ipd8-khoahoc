@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import sequelize from '../config/database';
 import { QueryTypes } from 'sequelize';
 import { TrackPageviewDTO } from '../models/Analytics';
+import { AuthRequest } from '../middleware/auth';
 
 // Helper: Simple User Agent Parser
 function parseUserAgent(userAgent: string) {
@@ -565,6 +566,260 @@ export const getRealtimeStats = async (req: Request, res: Response) => {
       error: 'Failed to get realtime stats',
       details: error.message,
     });
+  }
+};
+
+// Get Dashboard Stats (IPD8)
+export const getDashboardStats = async (req: AuthRequest, res: Response) => {
+  try {
+    // Total courses
+    const coursesCount = await sequelize.query(
+      'SELECT COUNT(*) as count FROM courses',
+      { type: QueryTypes.SELECT }
+    );
+    const totalCourses = parseInt((coursesCount[0] as any)?.count) || 0;
+
+    // Total enrollments
+    const enrollmentsCount = await sequelize.query(
+      'SELECT COUNT(*) as count FROM enrollments',
+      { type: QueryTypes.SELECT }
+    );
+    const totalEnrollments = parseInt((enrollmentsCount[0] as any)?.count) || 0;
+
+    // Total users
+    const usersCount = await sequelize.query(
+      'SELECT COUNT(*) as count FROM users',
+      { type: QueryTypes.SELECT }
+    );
+    const totalUsers = parseInt((usersCount[0] as any)?.count) || 0;
+
+    // Total revenue
+    const revenueQuery = await sequelize.query(
+      `SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE status = 'paid'`,
+      { type: QueryTypes.SELECT }
+    );
+    const totalRevenue = parseFloat((revenueQuery[0] as any)?.total) || 0;
+
+    // Active enrollments
+    const activeEnrollments = await sequelize.query(
+      `SELECT COUNT(*) as count FROM enrollments WHERE status = 'active'`,
+      { type: QueryTypes.SELECT }
+    );
+    const totalActiveEnrollments = parseInt((activeEnrollments[0] as any)?.count) || 0;
+
+    res.json({
+      data: {
+        total_courses: totalCourses,
+        total_enrollments: totalEnrollments,
+        active_enrollments: totalActiveEnrollments,
+        total_users: totalUsers,
+        total_revenue: totalRevenue,
+      },
+    });
+  } catch (error: any) {
+    console.error('[getDashboardStats] Error:', error);
+    res.status(500).json({ error: 'Failed to fetch dashboard stats' });
+  }
+};
+
+// Get Course Analytics
+export const getCourseAnalytics = async (req: AuthRequest, res: Response) => {
+  try {
+    const { course_id } = req.query;
+
+    if (!course_id) {
+      return res.status(400).json({ error: 'Missing required parameter: course_id' });
+    }
+
+    // Course enrollments
+    const enrollmentsQuery = await sequelize.query(
+      `SELECT COUNT(*) as count FROM enrollments WHERE course_id = :course_id`,
+      {
+        replacements: { course_id },
+        type: QueryTypes.SELECT,
+      }
+    );
+    const enrollments = parseInt((enrollmentsQuery[0] as any)?.count) || 0;
+
+    // Active enrollments
+    const activeQuery = await sequelize.query(
+      `SELECT COUNT(*) as count FROM enrollments WHERE course_id = :course_id AND status = 'active'`,
+      {
+        replacements: { course_id },
+        type: QueryTypes.SELECT,
+      }
+    );
+    const active = parseInt((activeQuery[0] as any)?.count) || 0;
+
+    // Average progress
+    const progressQuery = await sequelize.query(
+      `SELECT AVG(progress_percent) as avg_progress FROM enrollments WHERE course_id = :course_id`,
+      {
+        replacements: { course_id },
+        type: QueryTypes.SELECT,
+      }
+    );
+    const avgProgress = parseFloat((progressQuery[0] as any)?.avg_progress) || 0;
+
+    res.json({
+      data: {
+        course_id,
+        enrollments,
+        active_enrollments: active,
+        average_progress: Math.round(avgProgress * 100) / 100,
+      },
+    });
+  } catch (error: any) {
+    console.error('[getCourseAnalytics] Error:', error);
+    res.status(500).json({ error: 'Failed to fetch course analytics' });
+  }
+};
+
+// Get Enrollment Analytics
+export const getEnrollmentAnalytics = async (req: AuthRequest, res: Response) => {
+  try {
+    const { start_date, end_date } = req.query;
+
+    let whereClause = '';
+    const replacements: any = {};
+
+    if (start_date && end_date) {
+      whereClause = 'WHERE created_at >= :start_date AND created_at <= :end_date';
+      replacements.start_date = start_date;
+      replacements.end_date = end_date;
+    }
+
+    // Enrollments by status
+    const statusQuery = await sequelize.query(
+      `SELECT status, COUNT(*) as count FROM enrollments ${whereClause} GROUP BY status`,
+      {
+        replacements,
+        type: QueryTypes.SELECT,
+      }
+    );
+
+    // Enrollments by type
+    const typeQuery = await sequelize.query(
+      `SELECT type, COUNT(*) as count FROM enrollments ${whereClause} GROUP BY type`,
+      {
+        replacements,
+        type: QueryTypes.SELECT,
+      }
+    );
+
+    res.json({
+      data: {
+        by_status: statusQuery.map((s: any) => ({
+          status: s.status,
+          count: parseInt(s.count),
+        })),
+        by_type: typeQuery.map((t: any) => ({
+          type: t.type,
+          count: parseInt(t.count),
+        })),
+      },
+    });
+  } catch (error: any) {
+    console.error('[getEnrollmentAnalytics] Error:', error);
+    res.status(500).json({ error: 'Failed to fetch enrollment analytics' });
+  }
+};
+
+// Get Revenue Analytics
+export const getRevenueAnalytics = async (req: AuthRequest, res: Response) => {
+  try {
+    const { start_date, end_date } = req.query;
+
+    let whereClause = "WHERE status = 'paid'";
+    const replacements: any = {};
+
+    if (start_date && end_date) {
+      whereClause += ' AND created_at >= :start_date AND created_at <= :end_date';
+      replacements.start_date = start_date;
+      replacements.end_date = end_date;
+    }
+
+    // Total revenue
+    const totalQuery = await sequelize.query(
+      `SELECT COALESCE(SUM(total_amount), 0) as total FROM orders ${whereClause}`,
+      {
+        replacements,
+        type: QueryTypes.SELECT,
+      }
+    );
+    const totalRevenue = parseFloat((totalQuery[0] as any)?.total) || 0;
+
+    // Revenue by payment method
+    const methodQuery = await sequelize.query(
+      `SELECT payment_method, COALESCE(SUM(total_amount), 0) as total FROM orders ${whereClause} GROUP BY payment_method`,
+      {
+        replacements,
+        type: QueryTypes.SELECT,
+      }
+    );
+
+    // Orders count
+    const ordersQuery = await sequelize.query(
+      `SELECT COUNT(*) as count FROM orders ${whereClause}`,
+      {
+        replacements,
+        type: QueryTypes.SELECT,
+      }
+    );
+    const totalOrders = parseInt((ordersQuery[0] as any)?.count) || 0;
+
+    res.json({
+      data: {
+        total_revenue: totalRevenue,
+        total_orders: totalOrders,
+        by_payment_method: methodQuery.map((m: any) => ({
+          payment_method: m.payment_method || 'unknown',
+          total: parseFloat(m.total),
+        })),
+      },
+    });
+  } catch (error: any) {
+    console.error('[getRevenueAnalytics] Error:', error);
+    res.status(500).json({ error: 'Failed to fetch revenue analytics' });
+  }
+};
+
+// Get User Analytics
+export const getUserAnalytics = async (req: AuthRequest, res: Response) => {
+  try {
+    // Users by role
+    const roleQuery = await sequelize.query(
+      `SELECT role, COUNT(*) as count FROM users GROUP BY role`,
+      { type: QueryTypes.SELECT }
+    );
+
+    // Active users
+    const activeQuery = await sequelize.query(
+      `SELECT COUNT(*) as count FROM users WHERE is_active = true`,
+      { type: QueryTypes.SELECT }
+    );
+    const activeUsers = parseInt((activeQuery[0] as any)?.count) || 0;
+
+    // Total users
+    const totalQuery = await sequelize.query(
+      `SELECT COUNT(*) as count FROM users`,
+      { type: QueryTypes.SELECT }
+    );
+    const totalUsers = parseInt((totalQuery[0] as any)?.count) || 0;
+
+    res.json({
+      data: {
+        total_users: totalUsers,
+        active_users: activeUsers,
+        by_role: roleQuery.map((r: any) => ({
+          role: r.role,
+          count: parseInt(r.count),
+        })),
+      },
+    });
+  } catch (error: any) {
+    console.error('[getUserAnalytics] Error:', error);
+    res.status(500).json({ error: 'Failed to fetch user analytics' });
   }
 };
 

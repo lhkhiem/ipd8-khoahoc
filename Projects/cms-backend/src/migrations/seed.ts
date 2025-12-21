@@ -4,12 +4,29 @@ import '../utils/loadEnv';
 import { Pool } from 'pg';
 import * as bcrypt from 'bcryptjs';
 
+// SECURITY: Validate tất cả database config variables
+if (!process.env.DB_HOST) {
+  throw new Error('DB_HOST environment variable is required. Please set it in .env.local file.');
+}
+if (!process.env.DB_PORT) {
+  throw new Error('DB_PORT environment variable is required. Please set it in .env.local file.');
+}
+if (!process.env.DB_USER) {
+  throw new Error('DB_USER environment variable is required. Please set it in .env.local file.');
+}
+if (!process.env.DB_PASSWORD) {
+  throw new Error('DB_PASSWORD environment variable is required. Please set it in .env.local file.');
+}
+if (!process.env.DB_NAME) {
+  throw new Error('DB_NAME environment variable is required. Please set it in .env.local file.');
+}
+
 const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME || 'banyco',
-  user: process.env.DB_USER || 'spa_cms_user',
-  password: process.env.DB_PASSWORD || 'spa_cms_password',
+  host: process.env.DB_HOST,
+  port: parseInt(process.env.DB_PORT),
+  database: process.env.DB_NAME,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
 });
 
 async function seed() {

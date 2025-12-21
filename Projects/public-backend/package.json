@@ -1,0 +1,57 @@
+{
+  "name": "public-backend",
+  "version": "1.0.0",
+  "description": "Public Backend API for IPD8 Learning Platform",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "ts-node src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsc && echo '✓ Build completed successfully'",
+    "watch": "tsc --watch",
+    "migrate": "ts-node src/migrations/run-migrations.ts",
+    "migrate:setup": "ts-node src/migrations/setup-staging-db.ts",
+    "migrate:create-user": "ts-node src/migrations/create-db-user.ts",
+    "migrate:create-user-only": "ts-node src/migrations/create-user-only.ts",
+    "migrate:create-db-only": "ts-node src/migrations/create-database-only.ts",
+    "migrate:grant-permissions": "ts-node src/migrations/grant-schema-permissions.ts",
+    "migrate:test-connection": "ts-node src/migrations/test-postgres-connection.ts",
+    "migrate:test": "ts-node src/migrations/test-migration.ts",
+    "migrate:test-app": "ts-node src/migrations/test-app-connection.ts",
+    "migrate:verify": "echo 'Run: psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -f src/migrations/verify-migration.sql'",
+    "seed": "ts-node src/migrations/seed.ts",
+    "security:check": "ts-node src/scripts/security-check.ts",
+    "security:audit": "npm audit",
+    "security:fix": "npm audit fix",
+    "test:api": "ts-node src/tests/test-api-endpoints.ts",
+    "test:health": "ts-node src/tests/test-health-only.ts"
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.0",
+    "multer": "^1.4.5-lts.1",
+    "pg": "^8.10.0",
+    "sequelize": "^6.35.0",
+    "sharp": "^0.33.5",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.2",
+    "@types/cookie-parser": "^1.4.7",
+    "@types/cors": "^2.8.13",
+    "@types/express": "^4.17.17",
+    "@types/jsonwebtoken": "^9.0.2",
+    "@types/multer": "^1.4.13",
+    "@types/node": "^20.5.0",
+    "@types/pg": "^8.15.5",
+    "@types/uuid": "^10.0.0",
+    "nodemon": "^3.0.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  }
+}
+

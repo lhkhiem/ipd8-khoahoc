@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3011';
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3103';
 
 const nextConfig: NextConfig = {
   turbopack: {
@@ -34,10 +34,12 @@ const nextConfig: NextConfig = {
   async headers() {
     // Build connect-src với localhost cho development
     const isDevelopment = process.env.NODE_ENV === 'development';
+    // Get API domains from environment variables
+    const apiDomain = process.env.NEXT_PUBLIC_API_DOMAIN || process.env.NEXT_PUBLIC_API_URL?.replace(/https?:\/\//, '').replace(/\/api.*$/, '') || '';
+    const ecommerceApiDomain = process.env.NEXT_PUBLIC_ECOMMERCE_API_DOMAIN || '';
+    
     const connectSrc = [
       "'self'",
-      "https://ecommerce-api.banyco.vn",
-      "https://api.banyco.vn",
       "https://www.google-analytics.com",
       "https://analytics.google.com",
       "https://www.googletagmanager.com",
@@ -49,14 +51,14 @@ const nextConfig: NextConfig = {
     // Thêm localhost cho development mode
     if (isDevelopment) {
       // Thêm backend URL từ env hoặc default
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3011';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3103';
       // Remove trailing slash và /api nếu có
       const cleanApiUrl = apiUrl.replace(/\/api\/?$/, '').replace(/\/$/, '');
       
       connectSrc.push(
         cleanApiUrl, // Backend URL từ env
-        "http://localhost:3011", // Default backend port
-        "http://127.0.0.1:3011",
+        "http://localhost:3103", // Default backend port
+        "http://127.0.0.1:3103",
         "http://localhost:*", // Any localhost port
         "http://127.0.0.1:*" // Any 127.0.0.1 port
       );
@@ -76,7 +78,7 @@ const nextConfig: NextConfig = {
             // - font-src: Cho phép fonts từ self và Google Fonts
             // - img-src: Cho phép images từ self, data URIs, và tất cả HTTP/HTTPS domains
             // - connect-src: QUAN TRỌNG - Cho phép network connections đến:
-            //   * Backend APIs (ecommerce-api.banyco.vn, api.banyco.vn)
+            //   * Backend APIs (from NEXT_PUBLIC_API_DOMAIN, NEXT_PUBLIC_ECOMMERCE_API_DOMAIN env vars)
             //   * Google Analytics 4: www.google-analytics.com và analytics.google.com (GA4 dùng analytics.google.com để collect data)
             //   * Google Tag Manager: www.googletagmanager.com và các subdomain
             //   * Tất cả HTTPS domains khác (fallback)

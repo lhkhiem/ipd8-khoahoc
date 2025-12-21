@@ -20,7 +20,7 @@ export const getApiDomain = (): string => {
         // Invalid URL, fall through to default
       }
     }
-    return 'localhost:3011'; // fallback for development
+    return 'localhost:3103'; // fallback for development
   }
   return apiDomain;
 };
@@ -42,7 +42,7 @@ export const getFrontendDomain = (): string => {
       // Invalid URL, fall through to default
     }
   }
-  return 'localhost:3000';
+  return 'localhost:3103';
 };
 
 /**

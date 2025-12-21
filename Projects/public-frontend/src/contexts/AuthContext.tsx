@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
+import { authApi } from '@/lib/api'
 
 interface User {
   id: string
@@ -9,78 +10,124 @@ interface User {
   email: string
   phone?: string
   avatarUrl?: string
+  role?: string
 }
 
 interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
-  login: (email: string, password?: string) => void
-  logout: () => void
+  isLoading: boolean
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  register: (data: { email: string; password: string; name: string; phone?: string }) => Promise<{ success: boolean; error?: string }>
+  logout: () => Promise<void>
+  refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
+  // Check authentication on mount
   useEffect(() => {
-    // Check if user is logged in from localStorage
-    // Note: In production, use secure httpOnly cookies instead of localStorage
-    try {
-      const storedUser = localStorage.getItem('ipd8_user')
-      if (storedUser) {
-        const parsedUser = JSON.parse(storedUser)
-        // Validate user object structure
-        if (parsedUser && typeof parsedUser === 'object' && parsedUser.id && parsedUser.email) {
-          setUser(parsedUser)
-        } else {
-          // Invalid data, clear it
-          localStorage.removeItem('ipd8_user')
-        }
-      }
-    } catch (error) {
-      // Invalid JSON, clear it
-      console.error('Error parsing user data from localStorage:', error)
-      localStorage.removeItem('ipd8_user')
-    }
+    checkAuth()
   }, [])
 
-  const login = (email: string, password?: string) => {
-    // Validate email format
-    if (!email || typeof email !== 'string' || !email.includes('@')) {
-      console.error('Invalid email format')
-      return
-    }
-    
-    // Sanitize email
-    const sanitizedEmail = email.trim().toLowerCase().substring(0, 255)
-    
-    // Temporary login - just create a mock user
-    // In production, this should call a secure API endpoint
-    const mockUser: User = {
-      id: '1',
-      name: 'Nguyễn Văn A',
-      email: sanitizedEmail,
-      phone: '0901234567',
-      avatarUrl: undefined,
-    }
-    setUser(mockUser)
-    
-    // Note: In production, use secure httpOnly cookies instead of localStorage
+  const checkAuth = async () => {
     try {
-      localStorage.setItem('ipd8_user', JSON.stringify(mockUser))
+      setIsLoading(true)
+      const result = await authApi.getMe()
+      if (result.success && result.data) {
+        setUser({
+          id: result.data.id,
+          name: result.data.name,
+          email: result.data.email,
+          phone: result.data.phone,
+          avatarUrl: result.data.avatar_url,
+          role: result.data.role,
+        })
+      } else {
+        setUser(null)
+      }
     } catch (error) {
-      console.error('Error saving user to localStorage:', error)
+      console.error('[AuthContext] Check auth error:', error)
+      setUser(null)
+    } finally {
+      setIsLoading(false)
     }
-    
-    router.push('/dashboard')
   }
 
-  const logout = () => {
-    setUser(null)
-    localStorage.removeItem('ipd8_user')
-    router.push('/')
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      setIsLoading(true)
+      const result = await authApi.login({ email, password })
+      
+      if (result.success && result.data) {
+        setUser({
+          id: result.data.user.id,
+          name: result.data.user.name,
+          email: result.data.user.email,
+          phone: result.data.user.phone,
+          avatarUrl: result.data.user.avatar_url,
+          role: result.data.user.role,
+        })
+        return { success: true }
+      } else {
+        return { success: false, error: result.error || 'Login failed' }
+      }
+    } catch (error: any) {
+      console.error('[AuthContext] Login error:', error)
+      return { success: false, error: error.message || 'Login failed' }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const register = async (data: {
+    email: string
+    password: string
+    name: string
+    phone?: string
+  }): Promise<{ success: boolean; error?: string }> => {
+    try {
+      setIsLoading(true)
+      const result = await authApi.register(data)
+      
+      if (result.success && result.data) {
+        setUser({
+          id: result.data.user.id,
+          name: result.data.user.name,
+          email: result.data.user.email,
+          phone: result.data.user.phone,
+          role: result.data.user.role,
+        })
+        return { success: true }
+      } else {
+        return { success: false, error: result.error || 'Registration failed' }
+      }
+    } catch (error: any) {
+      console.error('[AuthContext] Register error:', error)
+      return { success: false, error: error.message || 'Registration failed' }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const logout = async () => {
+    try {
+      await authApi.logout()
+    } catch (error) {
+      console.error('[AuthContext] Logout error:', error)
+    } finally {
+      setUser(null)
+      router.push('/')
+    }
+  }
+
+  const refreshUser = async () => {
+    await checkAuth()
   }
 
   return (
@@ -88,8 +135,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         isAuthenticated: !!user,
+        isLoading,
         login,
+        register,
         logout,
+        refreshUser,
       }}
     >
       {children}

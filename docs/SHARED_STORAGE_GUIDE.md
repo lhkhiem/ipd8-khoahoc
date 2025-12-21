@@ -343,3 +343,13 @@ find /var/www/ipd8/shared-storage/uploads -type f -exec ls -lh {} \; | sort -k5 
 
 **Lưu ý:** Không đặt storage trong `cms-backend/` hay `public-backend/`, phải ở root project.
 
+
+
+
+
+
+
+
+
+
+

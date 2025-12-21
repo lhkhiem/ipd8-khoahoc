@@ -841,7 +841,7 @@ export default function MenuEditorPage({ params }: { params: Promise<{ id: strin
                   value={formData.icon}
                   onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
                   className="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  placeholder="e.g., home, menu, shopping-cart"
+                  placeholder="e.g., home, book-open, baby"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   Icon name from your icon library

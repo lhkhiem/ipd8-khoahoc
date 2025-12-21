@@ -13,7 +13,7 @@ export const listUsers = async (req: AuthRequest, res: Response) => {
 
     const users = await User.findAll({
       where,
-      attributes: ['id', 'name', 'email', 'status', 'role', 'created_at', 'updated_at'],
+      attributes: ['id', 'name', 'email', 'is_active', 'role', 'created_at', 'updated_at'],
       order: [['created_at', 'DESC']],
     });
     res.json({ data: users });
@@ -26,7 +26,7 @@ export const listUsers = async (req: AuthRequest, res: Response) => {
 export const createUser = async (req: AuthRequest, res: Response) => {
   try {
     const actor = req.user as any;
-    if (!actor || actor.role !== 'owner') {
+    if (!actor || actor.role !== 'admin') {
       return res.status(403).json({ error: 'Insufficient permission' });
     }
 
@@ -51,12 +51,12 @@ export const createUser = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'Password must be at least 8 characters and include letters and numbers' });
     }
 
-    // Role: restrict to allowed set (cannot create another owner directly for safety)
-    const allowedRoles = ['admin', 'editor', 'author'];
-    const newRole = role && allowedRoles.includes(role) ? role : 'admin';
+    // Role: restrict to allowed set (theo DATABASE_DESIGN_IPD8_TABLES_REFACTOR.md: guest, student, instructor, admin)
+    const allowedRoles = ['guest', 'student', 'instructor', 'admin'];
+    const newRole = role && allowedRoles.includes(role) ? role : 'guest';
 
     const password_hash = await bcrypt.hash(password, 10);
-    const user = await User.create({ email, name, password_hash, role: newRole, status: 'active' });
+    const user = await User.create({ email, name, password_hash, role: newRole, is_active: true });
 
     // Log activity
     await logActivity(req, 'create', 'user', user.id, name, `Created user "${name}" (${email})`);
@@ -66,7 +66,7 @@ export const createUser = async (req: AuthRequest, res: Response) => {
       email: user.email,
       name: user.name,
       role: (user as any).role,
-      status: user.status,
+      is_active: user.is_active,
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to create user' });
@@ -77,7 +77,7 @@ export const createUser = async (req: AuthRequest, res: Response) => {
 export const updateUser = async (req: AuthRequest, res: Response) => {
   try {
     const actor = req.user as any;
-    if (!actor || actor.role !== 'owner') {
+    if (!actor || actor.role !== 'admin') {
       return res.status(403).json({ error: 'Insufficient permission' });
     }
 
@@ -92,7 +92,7 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
     }
 
     // Prevent editing owner user completely (safety)
-    if ((user as any).role === 'owner') {
+    if ((user as any).role === 'admin') {
       return res.status(403).json({ error: 'Cannot update owner user' });
     }
 
@@ -115,13 +115,14 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
       user.password_hash = await bcrypt.hash(password, 10);
     }
     if (role !== undefined) {
-      const allowedRoles = ['admin', 'editor', 'author'];
+      // Theo DATABASE_DESIGN_IPD8_TABLES_REFACTOR.md: guest, student, instructor, admin
+      const allowedRoles = ['guest', 'student', 'instructor', 'admin'];
       if (allowedRoles.includes(role)) {
         (user as any).role = role;
       }
     }
     if (status !== undefined && (status === 'active' || status === 'inactive')) {
-      user.status = status;
+      user.is_active = status === 'active';
     }
 
     await user.save();
@@ -136,7 +137,7 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
       email: user.email,
       name: user.name,
       role: (user as any).role,
-      status: user.status,
+      is_active: user.is_active,
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to update user' });
@@ -147,7 +148,7 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
 export const deleteUser = async (req: AuthRequest, res: Response) => {
   try {
     const actor = req.user as any;
-    if (!actor || actor.role !== 'owner') {
+    if (!actor || actor.role !== 'admin') {
       return res.status(403).json({ error: 'Insufficient permission' });
     }
 
@@ -159,7 +160,7 @@ export const deleteUser = async (req: AuthRequest, res: Response) => {
     }
 
     // Prevent deleting owner (safety)
-    if ((user as any).role === 'owner') {
+    if ((user as any).role === 'admin') {
       return res.status(400).json({ error: 'Cannot delete owner user' });
     }
 

@@ -40,7 +40,7 @@ export default function SettingsPage() {
     // Top Banner Text
     topBannerText: '',
   });
-  const [email, setEmail] = useState<any>({ smtpHost: '', smtpPort: 587, encryption: 'tls', fromEmail: '', fromName: 'PressUp CMS', username: '', password: '', enabled: false });
+  const [email, setEmail] = useState<any>({ smtpHost: '', smtpPort: 587, encryption: 'tls', fromEmail: '', fromName: process.env.NEXT_PUBLIC_SITE_NAME || 'CMS', username: '', password: '', enabled: false });
   const [notifications, setNotifications] = useState<any>({ newPost: true, newUser: true, newComment: true, systemUpdates: true });
   const [security, setSecurity] = useState<any>({ twoFactorEnabled: false, sessionTimeout: 60, passwordPolicy: { minLength: 8, uppercase: true, numbers: true, special: false } });
   const [advanced, setAdvanced] = useState<any>({ apiBaseUrl: apiBase, cacheStrategy: 'memory' });
@@ -821,7 +821,7 @@ export default function SettingsPage() {
                     value={appearance.topBannerText || ''}
                     onChange={(e) => setAppearance({ ...appearance, topBannerText: e.target.value })}
                     className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring min-h-[80px]"
-                    placeholder="Miễn phí vận chuyển cho đơn hàng trên 749.000₫+ | 4.990₫ vận chuyển cho đơn hàng trên 199.000₫+"
+                    placeholder="Ưu đãi học phí đặc biệt cho mẹ bầu & em bé | Đăng ký sớm để giữ chỗ!"
                   />
                 </div>
 
@@ -991,7 +991,7 @@ export default function SettingsPage() {
                     type="text"
                     value={email.fromName || ''}
                     onChange={(e) => setEmail({ ...email, fromName: e.target.value })}
-                    placeholder="PressUp CMS"
+                    placeholder={process.env.NEXT_PUBLIC_SITE_NAME || 'CMS'}
                     className="w-full px-4 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     disabled={!email.enabled}
                   />

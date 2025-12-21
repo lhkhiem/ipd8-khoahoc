@@ -53,7 +53,23 @@ export default function LoginPage() {
     try {
       console.log('[LoginPage] Calling login function...');
       await login(email, password);
-      console.log('[LoginPage] Login successful, redirecting...');
+      console.log('[LoginPage] Login successful, verifying session...');
+      
+      // Wait a bit for cookie to be set by browser
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Verify session by calling hydrate
+      try {
+        await hydrate();
+        const currentUser = useAuthStore.getState().user;
+        if (!currentUser) {
+          console.warn('[LoginPage] Session not verified after login, retrying...');
+          await new Promise(resolve => setTimeout(resolve, 300));
+          await hydrate();
+        }
+      } catch (hydrateError: any) {
+        console.warn('[LoginPage] Hydrate failed, but continuing with redirect:', hydrateError?.message);
+      }
       
       // Check if there's a redirect URL in the query params
       const searchParams = new URLSearchParams(window.location.search);
@@ -62,8 +78,9 @@ export default function LoginPage() {
       console.log('[LoginPage] Redirecting to:', redirectUrl);
       
       // After successful login, redirect to intended page or dashboard
-      router.push(redirectUrl);
-      router.refresh(); // Force a refresh to ensure middleware picks up the new auth state
+      // Use window.location.href instead of router.push to ensure full page reload
+      // This ensures middleware can read the cookie
+      window.location.href = redirectUrl;
     } catch (err: any) {
       console.error('[LoginPage] Login failed:', {
         message: err?.message,
@@ -82,7 +99,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-8">
           <div className="relative w-32 h-32">
-            <Image src="/logo.png" alt="PressUp Agency" fill className="object-contain" priority />
+            <Image src="/logo.png" alt={process.env.NEXT_PUBLIC_SITE_NAME || 'CMS'} fill className="object-contain" priority />
           </div>
         </div>
 
@@ -112,22 +129,31 @@ export default function LoginPage() {
             </button>
           </form>
 
+          {/* ============================================
+              TEST USER INFO - XÓA KHI HOÀN THÀNH DỰ ÁN
+              ============================================ */}
           <div className="mt-6 pt-6 border-t border-border dark:border-slate-700">
             <p className="text-center text-sm text-muted-foreground dark:text-slate-400">
-              Thông tin đăng nhập mặc định:
+              Thông tin đăng nhập test:
             </p>
             <div className="mt-3 space-y-1.5 text-center">
               <p className="text-xs text-muted-foreground dark:text-slate-400">
-                Email: <span className="text-foreground dark:text-slate-200 font-mono">admin@pressup.com</span>
+                Email: <span className="text-foreground dark:text-slate-200 font-mono">test1766026824022@example.com</span>
               </p>
               <p className="text-xs text-muted-foreground dark:text-slate-400">
-                Vui lòng liên hệ quản trị viên để lấy mật khẩu
+                Mật khẩu: <span className="text-foreground dark:text-slate-200 font-mono">Test123!</span>
+              </p>
+              <p className="text-xs text-red-500 dark:text-red-400 mt-2">
+                ⚠️ Chỉ dùng cho môi trường test/development
               </p>
             </div>
           </div>
+          {/* ============================================
+              END TEST USER INFO
+              ============================================ */}
         </div>
 
-        <p className="text-center text-muted-foreground dark:text-slate-500 text-sm mt-6">© 2024 Banyco CMS. Bảo lưu mọi quyền.</p>
+        <p className="text-center text-muted-foreground dark:text-slate-500 text-sm mt-6">© {new Date().getFullYear()} {process.env.NEXT_PUBLIC_SITE_NAME || 'CMS'}. Bảo lưu mọi quyền.</p>
       </div>
     </div>
   );

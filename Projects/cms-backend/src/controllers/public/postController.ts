@@ -1,115 +1,87 @@
 import { Request, Response } from 'express';
-import { Op } from 'sequelize';
+import { Op, QueryTypes } from 'sequelize';
+import sequelize from '../../config/database';
 
 import Post from '../../models/Post';
-import Topic from '../../models/Topic';
-import Tag from '../../models/Tag';
-import Asset from '../../models/Asset';
+import User from '../../models/User';
 
 const DEFAULT_PAGE_SIZE = 10;
 
-interface SEOData {
-  title?: string;
-  description?: string;
-  og_image?: string;
-  keywords?: string[];
-}
-
-const formatPost = (post: any) => {
+const formatPost = (post: any, tags: string[] = []) => {
   const plain = post.toJSON();
-  plain.topics = Array.isArray(plain.topics)
-    ? plain.topics.map((t: any) => ({ id: t.id, name: t.name }))
-    : [];
-  plain.tags = Array.isArray(plain.tags)
-    ? plain.tags.map((t: any) => ({ id: t.id, name: t.name }))
-    : [];
-  plain.readTime = plain.read_time;
   
-  // Parse SEO data if it's a string
-  let seoData: SEOData | null = null;
-  if (plain.seo) {
-    try {
-      seoData = typeof plain.seo === 'string' ? JSON.parse(plain.seo) : plain.seo;
-    } catch (e) {
-      console.error('[formatPost] Failed to parse SEO data:', e);
-      seoData = null;
-    }
-  }
-  plain.seo = seoData;
+  // Tags từ bảng post_tags (tag_name, không phải tag_id)
+  plain.tags = tags.map((tagName) => ({ name: tagName }));
   
-  // Add computed meta fields for easier frontend usage
-  // Priority: seo.title > post.title
-  plain.metaTitle = seoData?.title || plain.title || '';
-  plain.metaDescription = seoData?.description || plain.excerpt || '';
-  plain.metaOgImage = seoData?.og_image || (plain.cover_asset?.cdn_url || plain.cover_asset?.url || '');
-  plain.metaKeywords = seoData?.keywords || [];
+  // SEO fields từ seo_title và seo_description (không phải JSONB)
+  plain.metaTitle = plain.seo_title || plain.title || '';
+  plain.metaDescription = plain.seo_description || plain.excerpt || '';
+  plain.metaOgImage = plain.thumbnail_url || '';
+  
+  // Remove fields không còn dùng
+  delete plain.read_time;
+  delete plain.cover_asset;
   
   return plain;
 };
 
 export const listPublishedPosts = async (req: Request, res: Response) => {
   try {
-    const { page = 1, pageSize = DEFAULT_PAGE_SIZE, q, topic, tag, featured_only } = req.query;
+    const { page = 1, pageSize = DEFAULT_PAGE_SIZE } = req.query;
     const offset = ((Number(page) || 1) - 1) * (Number(pageSize) || DEFAULT_PAGE_SIZE);
 
-    const where: any = { status: 'published' };
-    if (featured_only === 'true') {
-      where.is_featured = true;
-    }
-    if (q && typeof q === 'string' && q.trim().length > 0) {
-      where[Op.or] = [
-        { title: { [Op.iLike]: `%${q}%` } },
-        { excerpt: { [Op.iLike]: `%${q}%` } },
-        { content: { [Op.iLike]: `%${q}%` } },
-      ];
-    }
-
-    const topicFilter = topic && typeof topic === 'string' ? topic.split(',') : undefined;
-    const tagFilter = tag && typeof tag === 'string' ? tag.split(',') : undefined;
-
+    // Simple query - just get published posts
     const { count, rows } = await Post.findAndCountAll({
-      where,
+      where: { status: 'published' },
       offset,
       limit: Number(pageSize) || DEFAULT_PAGE_SIZE,
-      order: [
-        ['is_featured', 'DESC'],
-        ['published_at', 'DESC'],
-      ],
-      include: [
-        {
-          model: Asset,
-          as: 'cover_asset',
-          required: false,
-          attributes: ['id', 'url', 'cdn_url', 'format', 'width', 'height', 'sizes'],
-        },
-        {
-          model: Topic,
-          as: 'topics',
-          attributes: ['id', 'name'],
-          through: { attributes: [] },
-          ...(topicFilter ? { where: { id: topicFilter } } : {}),
-        },
-        {
-          model: Tag,
-          as: 'tags',
-          attributes: ['id', 'name'],
-          through: { attributes: [] },
-          ...(tagFilter ? { where: { id: tagFilter } } : {}),
-        },
-      ],
-      distinct: true,
+      order: [['created_at', 'DESC']],
     });
+
+    // Fetch tags for each post (simplified - skip if no posts)
+    let tagsByPostId: Record<string, string[]> = {};
+    if (rows.length > 0) {
+      try {
+        const postIds = rows.map((p) => p.id);
+        const placeholders = postIds.map((_, i) => `$${i + 1}`).join(',');
+        const tagResults = await sequelize.query(
+          `SELECT post_id, tag_name FROM post_tags WHERE post_id IN (${placeholders})`,
+          {
+            bind: postIds,
+            type: QueryTypes.SELECT,
+          }
+        ) as any[];
+        
+        // Handle Sequelize query result format
+        const tags = Array.isArray(tagResults) && tagResults.length > 0 && Array.isArray(tagResults[0])
+          ? tagResults[0]
+          : tagResults;
+        
+        tags.forEach((tr: any) => {
+          if (tr && tr.post_id) {
+            if (!tagsByPostId[tr.post_id]) {
+              tagsByPostId[tr.post_id] = [];
+            }
+            tagsByPostId[tr.post_id].push(tr.tag_name);
+          }
+        });
+      } catch (tagError: any) {
+        console.warn('[public] Failed to fetch tags:', tagError?.message || tagError);
+        // Continue without tags
+      }
+    }
 
     res.json({
       success: true,
-      data: rows.map(formatPost),
+      data: rows.map((post) => formatPost(post, tagsByPostId[post.id] || [])),
       total: count,
       page: Number(page) || 1,
       pageSize: Number(pageSize) || DEFAULT_PAGE_SIZE,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('[public] listPublishedPosts error:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch posts' });
+    console.error('[public] listPublishedPosts error stack:', error.stack);
+    res.status(500).json({ success: false, error: 'Failed to fetch posts', details: error.message });
   }
 };
 
@@ -120,22 +92,10 @@ export const getPublishedPostBySlug = async (req: Request, res: Response) => {
       where: { slug, status: 'published' },
       include: [
         {
-          model: Asset,
-          as: 'cover_asset',
+          model: User,
+          as: 'author',
           required: false,
-          attributes: ['id', 'url', 'cdn_url', 'format', 'width', 'height', 'sizes'],
-        },
-        {
-          model: Topic,
-          as: 'topics',
-          attributes: ['id', 'name'],
-          through: { attributes: [] },
-        },
-        {
-          model: Tag,
-          as: 'tags',
-          attributes: ['id', 'name'],
-          through: { attributes: [] },
+          attributes: ['id', 'name', 'avatar_url'],
         },
       ],
     });
@@ -144,10 +104,30 @@ export const getPublishedPostBySlug = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, error: 'Post not found' });
     }
 
-    res.json({ success: true, data: formatPost(post) });
-  } catch (error) {
+    // Fetch tags for this post
+    let tags: string[] = [];
+    try {
+      const tagResults = await sequelize.query(
+        `SELECT tag_name FROM post_tags WHERE post_id = :postId`,
+        {
+          replacements: { postId: post.id },
+          type: QueryTypes.SELECT,
+        }
+      ) as any[];
+      
+      // Sequelize returns array of arrays for SELECT queries
+      tags = Array.isArray(tagResults) && tagResults.length > 0
+        ? (Array.isArray(tagResults[0]) ? tagResults[0] : tagResults).map((tr: any) => tr.tag_name || tr)
+        : [];
+    } catch (tagError) {
+      console.warn('[public] Failed to fetch tags:', tagError);
+      // Continue without tags
+    }
+
+    res.json({ success: true, data: formatPost(post, tags) });
+  } catch (error: any) {
     console.error('[public] getPublishedPostBySlug error:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch post' });
+    res.status(500).json({ success: false, error: 'Failed to fetch post', details: error.message });
   }
 };
 

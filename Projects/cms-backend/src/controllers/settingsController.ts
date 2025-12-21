@@ -3,12 +3,22 @@ import { AuthRequest } from '../middleware/auth';
 import sequelize from '../config/database';
 import { logActivity } from './activityLogController';
 
+// SECURITY: Tất cả config phải từ .env.local (theo yêu cầu kiến trúc)
+// Không hardcode, không dùng default values
+const getEnvOrThrow = (key: string, description: string): string => {
+  const value = process.env[key];
+  if (!value) {
+    throw new Error(`${key} environment variable is required for ${description}. Please set it in .env.local file.`);
+  }
+  return value;
+};
+
 const DEFAULTS: Record<string, any> = {
   general: {
-    siteName: 'PressUp CMS',
-    siteDescription: 'A powerful content management system',
-    siteUrl: process.env.SITE_URL || process.env.WEBSITE_ORIGIN || 'https://example.com',
-    adminEmail: 'admin@pressup.com',
+    siteName: process.env.SITE_NAME || '', // Sẽ được load từ database settings
+    siteDescription: process.env.SITE_DESCRIPTION || '', // Sẽ được load từ database settings
+    siteUrl: process.env.SITE_URL || process.env.WEBSITE_ORIGIN || process.env.NEXT_PUBLIC_SITE_URL || '',
+    adminEmail: process.env.ADMIN_EMAIL || process.env.SMTP_USER || '',
     businessInfo: { company: '', address: '', taxCode: '', phone: '', email: '' },
     socialLinks: { facebook: '', youtube: '', tiktok: '', linkedin: '', twitter: '' },
     workingHours: {
@@ -27,20 +37,20 @@ const DEFAULTS: Record<string, any> = {
     logo_url: '',
     favicon_asset_id: null,
     favicon_url: '',
-    // Ecommerce storefront branding
+    // Website branding for public site (if dùng chung backend)
     ecommerce_logo_asset_id: null,
     ecommerce_logo_url: '',
     ecommerce_favicon_asset_id: null,
     ecommerce_favicon_url: '',
-    // Top Banner text for storefront
-    topBannerText: 'Miễn phí vận chuyển cho đơn hàng trên 749.000₫+ | 4.990₫ vận chuyển cho đơn hàng trên 199.000₫+',
+    // Top Banner text cho website
+    topBannerText: '',
   },
   email: {
     smtpHost: '',
     smtpPort: 587,
     encryption: 'tls',
     fromEmail: '',
-    fromName: 'PressUp CMS',
+    fromName: process.env.SITE_NAME || process.env.EMAIL_FROM_NAME || '',
     username: '',
     password: '',
     enabled: false,
@@ -57,7 +67,7 @@ const DEFAULTS: Record<string, any> = {
     passwordPolicy: { minLength: 8, uppercase: true, numbers: true, special: false },
   },
   advanced: {
-    apiBaseUrl: process.env.API_BASE_URL || process.env.BASE_URL || 'http://localhost:3011',
+    apiBaseUrl: process.env.API_BASE_URL || process.env.BASE_URL || process.env.CMS_API_BASE_URL || '',
     cacheStrategy: 'memory',
   },
   seo: {

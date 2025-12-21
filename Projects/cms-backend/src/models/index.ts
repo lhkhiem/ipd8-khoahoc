@@ -5,9 +5,6 @@ import Asset from './Asset';
 import User from './User';
 import Topic from './Topic';
 import Tag from './Tag';
-import { Product } from './Product';
-import { ProductCategory } from './ProductCategory';
-import { Brand } from './Brand';
 import AssetFolder from './AssetFolder';
 import MediaFolder from './MediaFolder';
 import MenuLocation from './MenuLocation';
@@ -15,8 +12,6 @@ import MenuItem from './MenuItem';
 import EducationResource from './EducationResource';
 import Testimonial from './Testimonial';
 import ValueProp from './ValueProp';
-import { ProductOption } from './ProductOption';
-import Address from './Address';
 import ContactMessage from './ContactMessage';
 import ConsultationSubmission from './ConsultationSubmission';
 import AboutSection from './AboutSection';
@@ -24,6 +19,18 @@ import PageMetadata from './PageMetadata';
 import NewsletterSubscription from './NewsletterSubscription';
 import FAQCategory from './FAQCategory';
 import FAQQuestion from './FAQQuestion';
+// IPD8 Models
+import Instructor from './Instructor';
+import Course from './Course';
+import CourseModule from './CourseModule';
+import CourseSession from './CourseSession';
+import Material from './Material';
+import Enrollment from './Enrollment';
+import Progress from './Progress';
+import Order from './Order';
+import OrderItem from './OrderItem';
+import Payment from './Payment';
+import Notification from './Notification';
 
 // Define all associations here
 // Define explicit through models (no timestamps) for many-to-many junctions
@@ -100,17 +107,6 @@ MenuItem.belongsTo(MenuItem, {
   as: 'parent',
 });
 
-// Address associations
-Address.belongsTo(User, {
-  foreignKey: 'user_id',
-  as: 'user',
-});
-
-User.hasMany(Address, {
-  foreignKey: 'user_id',
-  as: 'addresses',
-});
-
 // Contact Message associations
 ContactMessage.belongsTo(User, {
   foreignKey: 'assigned_to',
@@ -164,6 +160,148 @@ FAQQuestion.belongsTo(FAQCategory, {
   as: 'category',
 });
 
+// IPD8 Associations
+// Instructor associations
+Instructor.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'user',
+});
+
+User.hasOne(Instructor, {
+  foreignKey: 'user_id',
+  as: 'instructor',
+});
+
+Instructor.hasMany(Course, {
+  foreignKey: 'instructor_id',
+  as: 'courses',
+});
+
+// Course associations
+Course.belongsTo(Instructor, {
+  foreignKey: 'instructor_id',
+  as: 'instructor',
+});
+
+Course.hasMany(CourseModule, {
+  foreignKey: 'course_id',
+  as: 'modules',
+});
+
+Course.hasMany(CourseSession, {
+  foreignKey: 'course_id',
+  as: 'sessions',
+});
+
+Course.hasMany(Material, {
+  foreignKey: 'course_id',
+  as: 'materials',
+});
+
+Course.hasMany(Enrollment, {
+  foreignKey: 'course_id',
+  as: 'enrollments',
+});
+
+// CourseModule associations
+CourseModule.belongsTo(Course, {
+  foreignKey: 'course_id',
+  as: 'course',
+});
+
+// CourseSession associations
+CourseSession.belongsTo(Course, {
+  foreignKey: 'course_id',
+  as: 'course',
+});
+
+CourseSession.belongsTo(Instructor, {
+  foreignKey: 'instructor_id',
+  as: 'instructor',
+});
+
+// Material associations
+Material.belongsTo(Course, {
+  foreignKey: 'course_id',
+  as: 'course',
+});
+
+// Enrollment associations
+Enrollment.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'user',
+});
+
+Enrollment.belongsTo(Course, {
+  foreignKey: 'course_id',
+  as: 'course',
+});
+
+Enrollment.hasMany(Progress, {
+  foreignKey: 'enrollment_id',
+  as: 'progresses',
+});
+
+// Progress associations
+Progress.belongsTo(Enrollment, {
+  foreignKey: 'enrollment_id',
+  as: 'enrollment',
+});
+
+Progress.belongsTo(CourseModule, {
+  foreignKey: 'module_id',
+  as: 'module',
+});
+
+Progress.belongsTo(CourseSession, {
+  foreignKey: 'session_id',
+  as: 'session',
+});
+
+// Order associations
+Order.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'user',
+});
+
+Order.hasMany(OrderItem, {
+  foreignKey: 'order_id',
+  as: 'items',
+});
+
+Order.hasMany(Payment, {
+  foreignKey: 'order_id',
+  as: 'payments',
+});
+
+// OrderItem associations
+OrderItem.belongsTo(Order, {
+  foreignKey: 'order_id',
+  as: 'order',
+});
+
+OrderItem.belongsTo(Course, {
+  foreignKey: 'course_id',
+  as: 'course',
+});
+
+// Payment associations
+Payment.belongsTo(Order, {
+  foreignKey: 'order_id',
+  as: 'order',
+});
+
+// Notification associations
+Notification.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'user',
+});
+
+User.hasMany(Notification, {
+  foreignKey: 'user_id',
+  as: 'notifications',
+});
+
 // Export all models
 export {
   Post,
@@ -171,9 +309,6 @@ export {
   User,
   Topic,
   Tag,
-  Product,
-  ProductCategory,
-  Brand,
   AssetFolder,
   MediaFolder,
   MenuLocation,
@@ -181,8 +316,6 @@ export {
   EducationResource,
   Testimonial,
   ValueProp,
-  ProductOption,
-  Address,
   ContactMessage,
   ConsultationSubmission,
   AboutSection,
@@ -190,5 +323,17 @@ export {
   NewsletterSubscription,
   FAQCategory,
   FAQQuestion,
+  // IPD8 Models
+  Instructor,
+  Course,
+  CourseModule,
+  CourseSession,
+  Material,
+  Enrollment,
+  Progress,
+  Order,
+  OrderItem,
+  Payment,
+  Notification,
 };
 

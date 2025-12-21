@@ -104,7 +104,7 @@ export const getPageMetadata = async (req: Request, res: Response) => {
       
       if (homePage) {
         const result = {
-          title: homePage.title || 'Banyco',
+          title: homePage.title || process.env.SITE_NAME || 'Website',
           description: homePage.description || '',
           ogImage: homePage.og_image || '',
           keywords: homePage.keywords || [],
@@ -122,7 +122,7 @@ export const getPageMetadata = async (req: Request, res: Response) => {
       
       // No metadata found, return default (also cache this)
       const defaultResult = {
-        title: 'Banyco',
+        title: process.env.SITE_NAME || 'Website',
         description: '',
         ogImage: '',
         keywords: [],

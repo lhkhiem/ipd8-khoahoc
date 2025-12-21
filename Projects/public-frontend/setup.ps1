@@ -56,7 +56,7 @@ Write-Host ""
 Write-Host "Next steps:" -ForegroundColor Yellow
 Write-Host "1. Update .env.local with your configuration" -ForegroundColor White
 Write-Host "2. Run: npm run dev" -ForegroundColor White
-Write-Host "3. Open: http://localhost:3000" -ForegroundColor White
+Write-Host "3. Open: http://localhost:3100" -ForegroundColor White
 Write-Host ""
 Write-Host "Available commands:" -ForegroundColor Yellow
 Write-Host "  npm run dev      - Start development server" -ForegroundColor White

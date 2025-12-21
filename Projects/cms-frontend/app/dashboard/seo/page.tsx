@@ -370,7 +370,9 @@ export default function SEOPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Quản lý SEO</h1>
-          <p className="text-sm text-muted-foreground">Cấu hình metadata (title, description, OG image) cho các trang tĩnh. SEO cho Product và Post được quản lý trực tiếp trong form CRUD của chúng.</p>
+          <p className="text-sm text-muted-foreground">
+            Cấu hình metadata (title, description, OG image) cho các trang tĩnh của website (trang giới thiệu, blog, landing page...).
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Link href="/dashboard" className="inline-flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors">
@@ -395,7 +397,7 @@ export default function SEOPage() {
             <div>
               <h4 className="text-base font-semibold text-foreground">Trang tĩnh</h4>
               <p className="text-xs text-muted-foreground mt-1">
-                Các trang cố định như /products, /about, /contact. Bạn có thể tạo và chỉnh sửa tự do.
+                Các trang cố định như /about, /blog, /khoa-hoc. Bạn có thể tạo và chỉnh sửa tự do.
               </p>
             </div>
             <button

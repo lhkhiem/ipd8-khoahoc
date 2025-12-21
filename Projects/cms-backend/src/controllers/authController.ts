@@ -83,38 +83,90 @@ export const login = async (req: Request, res: Response) => {
     console.log('[Login] Password valid, generating token...');
 
     const jwtSecret = getJWTSecret();
+    const jwtExpiresIn = process.env.JWT_EXPIRES_IN;
+    if (!jwtExpiresIn) {
+      throw new Error('JWT_EXPIRES_IN environment variable is required. Please set it in .env.local file.');
+    }
     const token = jwt.sign(
       { id: user.id, email: user.email, role: (user as any).role },
       jwtSecret,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as any
+      { expiresIn: jwtExpiresIn } as any
     );
     console.log('[Login] Token generated, setting cookie...');
 
     // Set HTTP-only cookie for session
     const maxAgeMs = 7 * 24 * 60 * 60 * 1000; // 7 days
     
+    // Determine if we're in development (localhost)
+    // Check multiple sources to detect localhost environment
+    const baseUrl = process.env.BASE_URL || process.env.CMS_API_BASE_URL || '';
+    const apiDomain = process.env.API_DOMAIN || '';
+    const isLocalhost = 
+      process.env.NODE_ENV === 'development' ||
+      baseUrl.includes('localhost') ||
+      baseUrl.includes('127.0.0.1') ||
+      apiDomain.includes('localhost') ||
+      apiDomain.includes('127.0.0.1') ||
+      !apiDomain || // No API_DOMAIN set = likely development
+      apiDomain === 'localhost' ||
+      apiDomain === '127.0.0.1';
+    
     // Set domain for cross-subdomain cookie sharing
-    // Allow cookie to be shared between api.banyco.vn and admin.banyco.vn
+    // Allow cookie to be shared between API domain and Admin domain (from env)
     const cookieOptions: any = {
       httpOnly: true,
+      // For localhost development: use 'lax' (works for same-site)
+      // For production: use 'lax' (secure cookies)
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      secure: !isLocalhost, // Only secure in production
       maxAge: maxAgeMs,
       path: '/',
     };
     
-    // Set domain for cross-subdomain cookie sharing (always in production-like environment)
-    const apiDomain = process.env.API_DOMAIN || process.env.BASE_URL?.replace(/https?:\/\//, '').split(':')[0] || 'api.banyco.vn';
-    if (apiDomain && !apiDomain.includes('localhost')) {
-      // Extract root domain (e.g., 'banyco.vn' from 'api.banyco.vn')
+    // Set domain for cross-subdomain cookie sharing (ONLY in production, NOT for localhost)
+    // For localhost, NEVER set domain - this allows cookie to work across different ports
+    if (!isLocalhost && apiDomain && apiDomain !== 'localhost' && apiDomain !== '127.0.0.1') {
+      // Extract root domain from API_DOMAIN env (e.g., 'example.com' from 'api.example.com')
       const rootDomain = apiDomain.split('.').slice(-2).join('.');
       if (rootDomain && rootDomain !== 'localhost' && !rootDomain.includes('127.0.0.1')) {
         cookieOptions.domain = `.${rootDomain}`;
       }
     }
     
+    // Log for debugging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Login] Cookie domain detection:', {
+        baseUrl,
+        apiDomain,
+        isLocalhost,
+        willSetDomain: !!cookieOptions.domain,
+        cookieDomain: cookieOptions.domain || 'not set (localhost)',
+      });
+    }
+    
+    // Set cookie BEFORE sending response
     res.cookie('token', token, cookieOptions);
-    console.log('[Login] Cookie set, sending response...');
+    
+    // Log cookie details for debugging
+    console.log('[Login] Cookie set with options:', {
+      httpOnly: cookieOptions.httpOnly,
+      sameSite: cookieOptions.sameSite,
+      secure: cookieOptions.secure,
+      path: cookieOptions.path,
+      domain: cookieOptions.domain || 'not set (localhost)',
+      maxAge: cookieOptions.maxAge,
+      isLocalhost, // Using isLocalhost (defined above) instead of isDevelopment
+    });
+    
+    // Verify cookie was set by checking response headers
+    const setCookieHeader = res.getHeader('Set-Cookie');
+    console.log('[Login] Set-Cookie header:', setCookieHeader);
+    console.log('[Login] Response headers:', {
+      'Access-Control-Allow-Credentials': res.getHeader('Access-Control-Allow-Credentials'),
+      'Set-Cookie': setCookieHeader,
+    });
+    
+    console.log('[Login] Sending response...');
 
     const response = {
       token,
@@ -176,6 +228,20 @@ export const verify = async (req: Request, res: Response) => {
     const bearer = req.headers.authorization?.split(' ')[1];
     const token = bearer || cookies['token'];
     
+    // Debug logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Verify] Request details:', {
+        hasCookieHeader: !!header,
+        cookieHeaderLength: header.length,
+        cookieKeys: Object.keys(cookies),
+        hasTokenCookie: !!cookies['token'],
+        hasBearerToken: !!bearer,
+        hasToken: !!token,
+        origin: req.headers.origin,
+        referer: req.headers.referer,
+      });
+    }
+    
     // 401 khi không có token là expected behavior, không cần log chi tiết
     if (!token) {
       return res.status(401).json({ error: 'No session' });
@@ -216,7 +282,11 @@ export const logout = async (_req: Request, res: Response) => {
     path: '/',
   };
   
-  const apiDomain = process.env.API_DOMAIN || 'api.banyco.vn';
+  // Get API domain from env - required in production
+  const apiDomain = process.env.API_DOMAIN;
+  if (!apiDomain && process.env.NODE_ENV === 'production') {
+    console.warn('[Logout] API_DOMAIN not set in production environment');
+  }
   if (apiDomain && !apiDomain.includes('localhost')) {
     const rootDomain = apiDomain.split('.').slice(-2).join('.');
     if (rootDomain && rootDomain !== 'localhost' && !rootDomain.includes('127.0.0.1')) {

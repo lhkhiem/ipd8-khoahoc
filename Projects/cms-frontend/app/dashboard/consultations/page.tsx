@@ -222,7 +222,7 @@ export default function ConsultationsPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Yêu cầu tư vấn</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Quản lý yêu cầu tư vấn thiết lập thiết bị spa
+            Quản lý yêu cầu tư vấn và hỗ trợ khách hàng
           </p>
         </div>
       </div>

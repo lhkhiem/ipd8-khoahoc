@@ -1,7 +1,7 @@
 // API configuration
 // This file centralizes API URLs to avoid hardcoding localhost
 
-const DEFAULT_BACKEND_PORT = 3011;
+const DEFAULT_BACKEND_PORT = 3103;
 
 const buildUrlFromWindow = (port: number) => {
   if (typeof window === 'undefined') {
@@ -11,7 +11,7 @@ const buildUrlFromWindow = (port: number) => {
   return `${protocol}//${hostname}:${port}`;
 };
 
-let apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3011';
+let apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3103';
 let backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || apiBaseUrl;
 
 const trimTrailingSlash = (url: string) => {

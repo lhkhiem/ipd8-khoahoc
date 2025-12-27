@@ -171,3 +171,10 @@ export const getInstructorCourses = async (req: AuthRequest, res: Response) => {
 
 
 
+
+
+
+
+
+
+

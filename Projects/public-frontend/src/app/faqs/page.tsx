@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, HelpCircle, BookOpen, CreditCard, Users, GraduationCap, Shield, Phone } from 'lucide-react'
 import {
@@ -32,150 +32,61 @@ const faqCategories: FAQCategory[] = [
     icon: HelpCircle,
     faqs: [
       {
-        question: 'IPD8 là gì?',
-        answer: 'IPD8 là trung tâm chuyên về 1.000 ngày đầu đời, đồng hành cùng mẹ và bé từ thai kỳ đến 12 tuổi. Chúng tôi cung cấp các khóa học, chương trình tư vấn và hỗ trợ toàn diện cho sự phát triển của trẻ.',
+        question: 'Chương trình IPD8 là gì?',
+        answer: 'IPD8 là chương trình giáo dục sớm đầu tiên tại Việt Nam tích hợp khoa học di truyền, tâm lý học hành vi và khoa học thần kinh, được thiết kế cho 1.000 ngày vàng đầu tiên (từ khi mang thai đến 2 tuổi) - giai đoạn quan trọng nhất cho sự phát triển của trẻ.',
       },
       {
-        question: 'IPD8 có những dịch vụ gì?',
-        answer: 'IPD8 cung cấp các dịch vụ bao gồm: khóa học cho mẹ bầu, khóa học cho trẻ 0-12 tháng, 13-24 tháng, 3-6 tuổi, gói học thử, combo khóa học, tư vấn chuyên sâu, và các hoạt động cộng đồng.',
+        question: 'Những chuyên gia đứng sau IPD8 là ai?',
+        answer: 'Chúng tôi là những chuyên gia trong các lãnh vực sử dụng giải mã gen, phân tích hành vi và các mốc phát triển cụ thể theo từng giai đoạn để tạo ra lộ trình học tập riêng biệt cho từng trẻ. Điều này đảm bảo các hoạt động học tập phù hợp với thế mạnh, nhu cầu và tốc độ tự nhiên của trẻ.',
       },
       {
-        question: 'Tôi có thể đến tham quan trung tâm không?',
-        answer: 'Có, bạn hoàn toàn có thể đến tham quan trung tâm. Vui lòng liên hệ hotline 0947 70 10 10 hoặc email contact@ipd8.org để đặt lịch tham quan. Chúng tôi sẽ có nhân viên hướng dẫn và giải đáp mọi thắc mắc của bạn.',
-      },
-      {
-        question: 'IPD8 có hoạt động ở những tỉnh thành nào?',
-        answer: 'Hiện tại IPD8 có trung tâm tại Hà Nội và TP. Hồ Chí Minh. Chúng tôi cũng cung cấp các khóa học online để phục vụ các gia đình ở các tỉnh thành khác.',
+        question: 'Chương trình được cá nhân hóa như thế nào cho con tôi?',
+        answer: 'Chương trình của chúng tôi được đồng phát triển bởi các chuyên gia hàng đầu từ New Zealand và Việt Nam, bao gồm các nhà giáo dục, nhà tâm lý học, bác sĩ nhi khoa và chuyên gia dinh dưỡng, đảm bảo tính chính xác về mặt khoa học và phù hợp với văn hóa.',
       },
     ],
   },
   {
-    id: 'courses',
-    name: 'Về các khóa học',
+    id: 'services',
+    name: 'Gói dịch vụ',
     icon: BookOpen,
     faqs: [
       {
-        question: 'Các khóa học tại IPD8 kéo dài bao lâu?',
-        answer: 'Thời gian khóa học tùy thuộc vào từng chương trình. Gói học thử là 1 buổi (60 phút), các khóa học chính thường kéo dài từ 8-12 buổi, mỗi buổi 60-90 phút. Bạn có thể xem chi tiết thời gian của từng khóa học trên trang thông tin khóa học.',
+        question: 'Bạn cung cấp những gói dịch vụ nào?',
+        answer: 'Chúng tôi cung cấp hai gói dịch vụ chính:\n\n• Gói Tiêu chuẩn – Chương trình 3 giai đoạn hoàn chỉnh với sự hướng dẫn nhóm và hỗ trợ cộng đồng.\n\n• Gói Cao cấp – Bao gồm các quyền lợi Tiêu chuẩn cùng với hỗ trợ chuyên gia 1:1, tư vấn chuyên sâu và quyền ưu tiên tham gia các hoạt động độc quyền.',
       },
       {
-        question: 'Tôi có thể đăng ký nhiều khóa học cùng lúc không?',
-        answer: 'Có, bạn hoàn toàn có thể đăng ký nhiều khóa học cùng lúc. IPD8 còn có các gói combo với ưu đãi đặc biệt khi đăng ký nhiều khóa học. Vui lòng liên hệ tư vấn viên để được tư vấn gói phù hợp nhất.',
-      },
-      {
-        question: 'Tôi có thể đổi lịch học không?',
-        answer: 'Có, bạn có thể đổi lịch học miễn phí trước 48 giờ. Vui lòng liên hệ hotline 0947 70 10 10 hoặc email contact@ipd8.org để được hỗ trợ đổi lịch. Lưu ý: đổi lịch trong vòng 48 giờ có thể phát sinh phí.',
-      },
-      {
-        question: 'Nếu tôi bỏ lỡ một buổi học thì sao?',
-        answer: 'Nếu bạn bỏ lỡ một buổi học, bạn có thể học bù trong các buổi học bù được sắp xếp hàng tuần. Vui lòng thông báo trước để chúng tôi sắp xếp lịch học bù phù hợp.',
-      },
-      {
-        question: 'Các khóa học có tài liệu học tập không?',
-        answer: 'Có, tất cả các khóa học đều có tài liệu học tập kèm theo, bao gồm sách hướng dẫn, video bài giảng, và các tài liệu thực hành. Bạn sẽ nhận được tài liệu khi bắt đầu khóa học.',
+        question: 'Bạn có hỗ trợ những trường hợp đặc biệt (ví dụ: thụ tinh trong ống nghiệm, cha mẹ đơn thân) không?',
+        answer: 'Có. Chúng tôi cung cấp các chương trình phù hợp cho trẻ em thụ tinh trong ống nghiệm, các nhóm nhạy cảm và các gia đình cha/mẹ đơn thân để đáp ứng nhu cầu riêng của họ.',
       },
     ],
   },
   {
     id: 'pricing',
-    name: 'Giá cả & Thanh toán',
+    name: 'Giá cả & Đăng ký',
     icon: CreditCard,
     faqs: [
       {
-        question: 'Giá các khóa học tại IPD8 là bao nhiêu?',
-        answer: 'Giá các khóa học tại IPD8 dao động từ 99.000đ (gói học thử) đến vài triệu đồng tùy theo khóa học và số buổi. Bạn có thể xem chi tiết giá trên trang thông tin từng khóa học hoặc liên hệ tư vấn viên để được báo giá cụ thể.',
+        question: 'Chương trình này có giá bao nhiêu?',
+        answer: 'Giá cả phụ thuộc vào gói dịch vụ và các dịch vụ bổ sung bạn chọn. Vui lòng liên hệ với chúng tôi để được tư vấn và báo giá cụ thể.',
       },
       {
-        question: 'IPD8 có chính sách ưu đãi gì không?',
-        answer: 'IPD8 có nhiều chương trình ưu đãi như: giảm giá cho đăng ký sớm, ưu đãi combo khi đăng ký nhiều khóa học, giảm giá cho gia đình có hoàn cảnh khó khăn, và các chương trình khuyến mãi theo mùa. Vui lòng theo dõi website hoặc fanpage để cập nhật các ưu đãi mới nhất.',
+        question: 'Tôi có thể dùng thử chương trình trước khi đăng ký không?',
+        answer: 'Có! Chúng tôi cung cấp chương trình dùng thử miễn phí, nơi bạn có thể trải nghiệm các bài học điển hình theo từng giai đoạn của con mình và nhận được bài đánh giá ban đầu cùng lộ trình học tập cá nhân hóa — hoàn toàn miễn phí.',
       },
       {
-        question: 'Tôi có thể thanh toán bằng cách nào?',
-        answer: 'Bạn có thể thanh toán bằng tiền mặt, chuyển khoản ngân hàng, hoặc thanh toán online qua thẻ tín dụng/thẻ ghi nợ. Chúng tôi hỗ trợ thanh toán trả góp cho các khóa học có giá trị cao.',
-      },
-      {
-        question: 'Tôi có được hoàn tiền nếu không hài lòng không?',
-        answer: 'Có, IPD8 cam kết hoàn tiền 100% nếu bạn không hài lòng với khóa học trong vòng 7 ngày kể từ buổi học đầu tiên. Vui lòng liên hệ bộ phận chăm sóc khách hàng để được hỗ trợ.',
-      },
-    ],
-  },
-  {
-    id: 'instructors',
-    name: 'Về giảng viên',
-    icon: Users,
-    faqs: [
-      {
-        question: 'Giảng viên tại IPD8 có trình độ như thế nào?',
-        answer: 'Tất cả giảng viên tại IPD8 đều là các chuyên gia đầu ngành, có bằng cấp chuyên môn cao và nhiều năm kinh nghiệm trong lĩnh vực chăm sóc và phát triển trẻ em. Nhiều giảng viên có học vị Thạc sĩ, Tiến sĩ và các chứng chỉ quốc tế.',
-      },
-      {
-        question: 'Tôi có thể chọn giảng viên không?',
-        answer: 'Bạn có thể yêu cầu học với giảng viên cụ thể khi đăng ký khóa học. Tuy nhiên, việc sắp xếp sẽ phụ thuộc vào lịch của giảng viên và số lượng học viên. Chúng tôi sẽ cố gắng đáp ứng yêu cầu của bạn.',
-      },
-      {
-        question: 'Tôi có thể liên hệ trực tiếp với giảng viên không?',
-        answer: 'Sau mỗi buổi học, bạn có thể trao đổi trực tiếp với giảng viên. Nếu cần tư vấn thêm, bạn có thể đặt lịch tư vấn riêng với giảng viên thông qua bộ phận chăm sóc khách hàng.',
-      },
-    ],
-  },
-  {
-    id: 'trial',
-    name: 'Gói học thử',
-    icon: GraduationCap,
-    faqs: [
-      {
-        question: 'Gói học thử 99K có gì?',
-        answer: 'Gói học thử 99K bao gồm 1 buổi học (60 phút) với đầy đủ nội dung và tài liệu như các khóa học chính thức. Bạn sẽ được trải nghiệm phương pháp giảng dạy, tương tác với giảng viên, và nhận tư vấn miễn phí sau buổi học.',
-      },
-      {
-        question: 'Tôi có thể đổi lịch buổi học thử không?',
-        answer: 'Có, bạn có thể đổi lịch buổi học thử miễn phí trước 48 giờ. Vui lòng liên hệ hotline 0947 70 10 10 hoặc email contact@ipd8.org để được hỗ trợ đổi lịch.',
-      },
-      {
-        question: 'Sau buổi học thử, tôi có được tư vấn miễn phí không?',
-        answer: 'Có, sau mỗi buổi học thử, bạn sẽ được tư vấn miễn phí 10 phút với giảng viên về phương pháp phù hợp cho bé và các gói học tiếp theo. Nếu cần tư vấn chi tiết hơn, bạn có thể đặt lịch tư vấn riêng.',
-      },
-      {
-        question: 'Tôi có thể hoàn tiền nếu không hài lòng với buổi học thử không?',
-        answer: 'Có, chúng tôi cam kết hoàn tiền 100% nếu bạn không hài lòng với buổi học thử trong vòng 24 giờ sau khi kết thúc buổi học. Vui lòng liên hệ bộ phận chăm sóc khách hàng để được hỗ trợ.',
-      },
-    ],
-  },
-  {
-    id: 'policies',
-    name: 'Chính sách & Quy định',
-    icon: Shield,
-    faqs: [
-      {
-        question: 'Chính sách hủy và hoàn tiền của IPD8 như thế nào?',
-        answer: 'Bạn có thể hủy khóa học và được hoàn tiền 100% nếu hủy trước 7 ngày khai giảng. Hủy trong vòng 3-7 ngày trước khai giảng được hoàn 70% học phí. Hủy trong vòng 3 ngày trước khai giảng được hoàn 50% học phí. Sau khi khóa học bắt đầu, không thể hoàn tiền nhưng có thể chuyển sang khóa học khác.',
-      },
-      {
-        question: 'IPD8 có chính sách bảo vệ thông tin cá nhân không?',
-        answer: 'Có, IPD8 cam kết bảo mật tuyệt đối thông tin cá nhân của học viên. Chúng tôi tuân thủ nghiêm ngặt Luật Bảo vệ Thông tin Cá nhân và không chia sẻ thông tin với bên thứ ba mà không có sự đồng ý của bạn.',
-      },
-      {
-        question: 'Tôi có thể chuyển nhượng khóa học cho người khác không?',
-        answer: 'Có, bạn có thể chuyển nhượng khóa học cho người khác với phí chuyển nhượng 10% giá trị khóa học. Vui lòng liên hệ bộ phận chăm sóc khách hàng để được hỗ trợ thủ tục chuyển nhượng.',
+        question: 'Tôi có thể đăng ký như thế nào?',
+        answer: 'Chỉ cần điền vào mẫu đăng ký trực tuyến của chúng tôi hoặc liên hệ đường dây nóng IPD8. Đội ngũ của chúng tôi sẽ hướng dẫn bạn trong suốt quá trình.',
       },
     ],
   },
   {
     id: 'contact',
-    name: 'Liên hệ & Hỗ trợ',
+    name: 'Liên hệ',
     icon: Phone,
     faqs: [
       {
         question: 'Làm thế nào để liên hệ với IPD8?',
-        answer: 'Bạn có thể liên hệ với IPD8 qua: Hotline: 0947 70 10 10 (8:00 - 20:00 hàng ngày), Email: contact@ipd8.org, Hoặc đến trực tiếp tại trung tâm. Chúng tôi luôn sẵn sàng hỗ trợ bạn.',
-      },
-      {
-        question: 'IPD8 có hỗ trợ tư vấn online không?',
-        answer: 'Có, IPD8 cung cấp dịch vụ tư vấn online qua video call với các chuyên gia. Bạn có thể đặt lịch tư vấn online thông qua website hoặc liên hệ hotline. Phí tư vấn online tùy thuộc vào thời gian và chuyên gia.',
-      },
-      {
-        question: 'Tôi có thể đặt lịch tư vấn riêng không?',
-        answer: 'Có, bạn hoàn toàn có thể đặt lịch tư vấn riêng với các chuyên gia tại IPD8. Vui lòng liên hệ hotline hoặc email để đặt lịch. Chúng tôi sẽ sắp xếp thời gian phù hợp nhất cho bạn.',
+        answer: 'Bạn có thể liên hệ với IPD8 qua hotline hoặc đến trực tiếp tại địa chỉ: Tầng 8, Tòa nhà Vietnam Business Center, số 57-59 đường Hồ Tùng Mậu, Phường Sài Gòn, TP. HCM. Đội ngũ của chúng tôi sẽ hướng dẫn bạn trong suốt quá trình.',
       },
     ],
   },
@@ -201,14 +112,63 @@ const itemVariants = {
 }
 
 export default function FAQsPage() {
+  const [headerHeight, setHeaderHeight] = useState<string>('104px')
   const [activeCategory, setActiveCategory] = useState<string>('general')
+
+  // Calculate header height
+  useEffect(() => {
+    const updateHeaderHeight = () => {
+      if (typeof window === 'undefined') return
+
+      const header = document.querySelector('header')
+      if (header) {
+        const actualHeight = header.offsetHeight
+        setHeaderHeight(`${actualHeight}px`)
+      } else {
+        setHeaderHeight(window.innerWidth >= 768 ? '140px' : '104px')
+      }
+    }
+
+    updateHeaderHeight()
+
+    const handleResize = () => {
+      requestAnimationFrame(() => {
+        updateHeaderHeight()
+      })
+    }
+
+    window.addEventListener('resize', handleResize)
+    window.addEventListener('orientationchange', handleResize)
+    
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize)
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', updateHeaderHeight)
+    } else {
+      updateHeaderHeight()
+    }
+
+    const timeoutId = setTimeout(updateHeaderHeight, 100)
+
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      window.removeEventListener('orientationchange', handleResize)
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleResize)
+      }
+      document.removeEventListener('DOMContentLoaded', updateHeaderHeight)
+      clearTimeout(timeoutId)
+    }
+  }, [])
 
   const activeCategoryData = faqCategories.find(cat => cat.id === activeCategory) || faqCategories[0]
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
       {/* Breadcrumb */}
-      <div className="bg-gray-50 border-b">
+      <div className="bg-gray-50 border-b" style={{ marginTop: headerHeight }}>
         <div className="container-custom py-4">
           <Breadcrumb
             items={[
@@ -219,7 +179,7 @@ export default function FAQsPage() {
       </div>
 
       {/* Hero Section */}
-      <section className="py-8 md:py-12 px-6 sm:px-8 md:px-12 lg:px-16 xl:px-20">
+      <section className="border-b py-8 md:py-12 px-6 sm:px-8 md:px-12 lg:px-16 xl:px-20">
         <div className="container-custom max-w-4xl mx-auto">
           <div className="bg-gradient-to-r from-[#F441A5] to-[#FF5F6D] rounded-2xl p-8 md:p-12">
             <motion.div
@@ -345,7 +305,7 @@ export default function FAQsPage() {
                           </span>
                         </AccordionTrigger>
                         <AccordionContent className="pb-6 text-base text-white/90 leading-relaxed">
-                          <div className="pr-8">
+                          <div className="pr-8 whitespace-pre-line">
                             {faq.answer}
                           </div>
                         </AccordionContent>
@@ -374,8 +334,11 @@ export default function FAQsPage() {
             <h3 className="text-2xl md:text-3xl font-bold mb-4" style={{ lineHeight: '1.2' }}>
               Vẫn chưa tìm thấy câu trả lời?
             </h3>
-            <p className="text-lg mb-6 text-white/90">
-              Đội ngũ tư vấn của chúng tôi luôn sẵn sàng hỗ trợ bạn
+            <p className="text-lg mb-4 text-white/90">
+              Đội ngũ tư vấn của chúng tôi luôn sẵn sàng hỗ trợ bạn. Vui lòng liên hệ với chúng tôi nếu bạn không tìm thấy câu trả lời cho câu hỏi của mình.
+            </p>
+            <p className="text-base mb-6 text-white/80">
+              Địa chỉ: Tầng 8, Tòa nhà Vietnam Business Center, số 57-59 đường Hồ Tùng Mậu, Phường Sài Gòn, TP. HCM
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
@@ -385,7 +348,7 @@ export default function FAQsPage() {
                 Gọi ngay: 0947 70 10 10
               </a>
               <a
-                href={`mailto:contact@ipd8.org`}
+                href={`mailto:website@otbcreatives.com`}
                 className="px-6 py-3 bg-white/10 backdrop-blur-sm border-2 border-white text-white rounded-full font-semibold hover:bg-white/20 transition-all duration-200 hover:scale-105"
               >
                 Gửi email

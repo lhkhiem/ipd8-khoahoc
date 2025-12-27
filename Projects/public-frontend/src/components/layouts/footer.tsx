@@ -108,25 +108,25 @@ export function Footer() {
               <li className="flex items-start gap-2">
                 <MapPin className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                 <span className="text-sm text-muted-foreground">
-                  123 Nguyễn Huệ, Quận 1, TP.HCM
+                  Tầng 8, Tòa nhà Vietnam Business Center số 57-59 đường Hồ Tùng Mậu, Phường Sài Gòn, TP. HCM
                 </span>
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="h-5 w-5 text-muted-foreground" />
                 <a
-                  href="tel:+84123456789"
+                  href="tel:+84947701010"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
-                  +84 123 456 789
+                  +84 94 770 10 10
                 </a>
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="h-5 w-5 text-muted-foreground" />
                 <a
-                  href="mailto:contact@ipd8.vn"
+                  href="mailto:contact@ipd8.org"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
-                  contact@ipd8.vn
+                  contact@ipd8.org
                 </a>
               </li>
             </ul>

@@ -113,7 +113,7 @@ export function SessionSidebar({ pricingBlocks, onRegister }: SessionSidebarProp
                   )}
                   <Button
                     onClick={() => onRegister(block.id)}
-                    className="w-full bg-gradient-to-r from-[#F441A5] to-[#FF5F6D] text-white hover:opacity-90 hover:scale-105 transition-all duration-200"
+                    className="btn-gradient-pink w-full"
                   >
                     Đăng ký ngay
                   </Button>

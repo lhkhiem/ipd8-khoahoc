@@ -207,7 +207,7 @@ export function ContactForm({ parallax = false }: ContactFormProps) {
                 <Button
                   type="submit"
                   size="lg"
-                  className="bg-gradient-to-r from-[#F441A5] to-[#FF5F6D] text-white hover:opacity-90 hover:scale-105 transition-all duration-200 px-12 py-6 text-lg font-semibold"
+                  className="btn-gradient-pink px-12 py-6 text-lg font-semibold"
                 >
                   Gửi đăng ký
                 </Button>

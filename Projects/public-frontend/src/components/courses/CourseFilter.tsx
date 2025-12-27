@@ -7,10 +7,8 @@ export type FilterCategory =
   | 'all'
   | 'me-bau'
   | '0-12-thang'
-  | '13-24-thang'
-  | 'hoc-thu-99k'
-  | 'combo-6-buoi'
-  | 'goi-3-6-12-24-thang'
+  | 'mien-phi'
+  | 'co-phí'
 
 interface CourseFilterProps {
   activeFilter: FilterCategory
@@ -18,13 +16,11 @@ interface CourseFilterProps {
 }
 
 const filters: { id: FilterCategory; label: string }[] = [
-  { id: 'all', label: 'Tất cả' },
-  { id: 'me-bau', label: 'Mẹ bầu' },
-  { id: '0-12-thang', label: '0–12 tháng' },
-  { id: '13-24-thang', label: '13–24 tháng' },
-  { id: 'hoc-thu-99k', label: 'Học thử 99k' },
-  { id: 'combo-6-buoi', label: 'Combo 6 buổi' },
-  { id: 'goi-3-6-12-24-thang', label: 'Gói 3/6/12/24 tháng' },
+  { id: 'all', label: 'Tất cả khóa học' },
+  { id: 'me-bau', label: 'Dành cho mẹ bầu' },
+  { id: '0-12-thang', label: 'Dành cho bé 0–12 tháng' },
+  { id: 'mien-phi', label: 'Khóa học miễn phí' },
+  { id: 'co-phí', label: 'Khóa học có phí' },
 ]
 
 export function CourseFilter({ activeFilter, onFilterChange }: CourseFilterProps) {

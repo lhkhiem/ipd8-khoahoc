@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Calendar, Clock, Users, MapPin, ChevronLeft, ChevronRight, Filter, List, Grid, X, Search } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
@@ -187,11 +187,60 @@ const mockSessions: ScheduleSession[] = [
 ]
 
 export default function SchedulePage() {
+  const [headerHeight, setHeaderHeight] = useState<string>('104px')
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar')
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [selectedCourse, setSelectedCourse] = useState<string>('all')
   const [currentMonth, setCurrentMonth] = useState(new Date(2025, 11, 1)) // December 2025
   const [popupDate, setPopupDate] = useState<Date | null>(null)
+
+  // Calculate header height
+  useEffect(() => {
+    const updateHeaderHeight = () => {
+      if (typeof window === 'undefined') return
+
+      const header = document.querySelector('header')
+      if (header) {
+        const actualHeight = header.offsetHeight
+        setHeaderHeight(`${actualHeight}px`)
+      } else {
+        setHeaderHeight(window.innerWidth >= 768 ? '140px' : '104px')
+      }
+    }
+
+    updateHeaderHeight()
+
+    const handleResize = () => {
+      requestAnimationFrame(() => {
+        updateHeaderHeight()
+      })
+    }
+
+    window.addEventListener('resize', handleResize)
+    window.addEventListener('orientationchange', handleResize)
+    
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize)
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', updateHeaderHeight)
+    } else {
+      updateHeaderHeight()
+    }
+
+    const timeoutId = setTimeout(updateHeaderHeight, 100)
+
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      window.removeEventListener('orientationchange', handleResize)
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleResize)
+      }
+      document.removeEventListener('DOMContentLoaded', updateHeaderHeight)
+      clearTimeout(timeoutId)
+    }
+  }, [])
 
   // Calculate endTime from time and duration
   const calculateEndTime = (time: string, duration: string): string => {
@@ -325,7 +374,7 @@ export default function SchedulePage() {
   return (
     <>
       {/* Main Content */}
-      <section className="w-full bg-gray-50 py-4 md:py-6">
+      <section className="w-full bg-gray-50 border-b py-4 md:py-6" style={{ marginTop: headerHeight }}>
         <div className="container-custom">
           {/* Title */}
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6" style={{ lineHeight: '1.2' }}>
@@ -651,7 +700,7 @@ export default function SchedulePage() {
                         {/* Action Button */}
                         <div className="flex-shrink-0">
                           <Button
-                            className="bg-gradient-to-r from-[#F441A5] to-[#FF5F6D] text-white hover:opacity-90 hover:scale-105 transition-all duration-200"
+                            className="btn-gradient-pink"
                             size="lg"
                           >
                             Đăng ký
@@ -744,7 +793,7 @@ export default function SchedulePage() {
                         </div>
                       </div>
                       <Button
-                        className="w-full bg-gradient-to-r from-[#F441A5] to-[#FF5F6D] text-white hover:opacity-90 hover:scale-105 transition-all duration-200"
+                        className="btn-gradient-pink w-full"
                         size="lg"
                       >
                         Đăng ký ngay

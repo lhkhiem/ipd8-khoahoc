@@ -36,7 +36,7 @@ export function TrialHero({ onBookNow, onRegister }: TrialHeroProps) {
       <div className="absolute inset-0 bg-gradient-to-br from-[#F441A5]/95 via-[#F441A5]/90 to-[#FF5F6D]/95"></div>
       
       {/* Content Container */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center py-20 md:py-24 lg:py-28">
+      <div className="container-custom relative z-10 w-full h-full flex items-center py-20 md:py-24 lg:py-28">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center w-full">
           {/* Left: Title & Info */}
           <motion.div

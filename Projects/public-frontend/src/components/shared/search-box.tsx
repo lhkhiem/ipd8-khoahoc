@@ -31,7 +31,7 @@ export function SearchBox({
           className="pl-10"
         />
       </div>
-      <Button type="submit">Tìm</Button>
+      <Button type="submit" className="btn-gradient-pink">Tìm</Button>
     </form>
   )
 }

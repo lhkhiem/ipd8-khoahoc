@@ -10,6 +10,9 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ROUTES } from '@/lib/constants'
+import { PackageSection } from '@/components/packages/PackageSection'
+import { allPackages } from '@/data/packages'
+import { useState, useEffect } from 'react'
 import 'swiper/css'
 import 'swiper/css/navigation'
 import 'swiper/css/pagination'
@@ -33,103 +36,58 @@ const scaleIn = {
   transition: { duration: 0.5 }
 }
 
-// Course packages data
+import { mockCourses } from '@/data/courses'
+import { formatCurrency } from '@/lib/utils'
+
+// Course packages data - Top 3 featured courses for hero section
 const coursePackages = [
   {
     id: 1,
-    title: 'DÀNH CHO MẸ BẦU/ CÓ CON TỪ 0 – 12 THÁNG',
-    image: 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=800&h=600&fit=crop',
-    description: 'Chương trình toàn diện cho mẹ bầu và bé sơ sinh',
-    price: 'Liên hệ',
-    duration: '12 tháng',
-    instructor: 'Đội ngũ chuyên gia IPD8',
-    benefits: ['Chăm sóc thai kỳ', 'Dinh dưỡng mẹ và bé', 'Phát triển trí tuệ']
+    title: 'CHO CON KHỞI ĐẦU TUYỆT VỜI NHẤT',
+    image: '/image/PressUp - lYlp5nadcO-1.webp',
+    description: 'Gói thành viên khởi đầu – món quà đặc biệt giúp mẹ bước vào hành trình 1.000 ngày đầu đời cùng con',
+    price: '49.000đ',
+    duration: 'Truy cập không giới hạn',
+    instructor: 'Chuyên gia IPD8',
+    benefits: ['50 bản nhạc chuyên biệt', 'Lớp học trải nghiệm', 'Tư vấn 1:1 với chuyên gia']
   },
   {
     id: 2,
-    title: 'DÀNH CHO MẸ CÓ CON TỪ 13 – 24 THÁNG',
-    image: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=800&h=600&fit=crop',
-    description: 'Hỗ trợ phát triển toàn diện cho bé từ 13-24 tháng',
-    price: 'Liên hệ',
-    duration: '12 tháng',
-    instructor: 'Đội ngũ chuyên gia IPD8',
-    benefits: ['Phát triển vận động', 'Kỹ năng giao tiếp', 'Dinh dưỡng hợp lý']
+    title: 'CHO CON SỨC KHỎE TUYỆT VỜI NHẤT',
+    image: '/image/PressUp - Hszb0PiRwI-5.webp',
+    description: 'Gói toàn diện cho sức khỏe của con: Bí quyết nuôi con bằng sữa mẹ, E-book chăm con đúng y khoa',
+    price: '299.000đ',
+    duration: 'Truy cập không giới hạn',
+    instructor: 'Chuyên gia IPD8',
+    benefits: ['Bí quyết nuôi con bằng sữa mẹ', 'E-book chăm con đúng y khoa', 'Phương pháp kích hoạt 8 loại hình trí thông minh']
   },
   {
     id: 3,
-    title: 'GÓI HỌC THỬ 01 BUỔI 99K',
-    image: 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=800&h=600&fit=crop',
-    description: 'Trải nghiệm một buổi học với giá ưu đãi',
-    price: '99.000đ',
-    duration: '1 buổi',
-    instructor: 'Đội ngũ chuyên gia IPD8',
-    benefits: ['Trải nghiệm thực tế', 'Tư vấn miễn phí', 'Đánh giá nhu cầu']
+    title: 'CHO CON SỰ HỌC TUYỆT VỜI NHẤT',
+    image: '/image/PressUp - LKdyw7R9L3-11.webp',
+    description: 'Hạng thẻ cao cấp nhất - Hành trình 1.000 ngày đầu đời trọn vẹn nhất',
+    price: '299.000đ',
+    duration: 'Truy cập không giới hạn',
+    instructor: 'Chuyên gia IPD8',
+    benefits: ['Khai phá tiềm năng tối ưu', 'Môi trường phát triển trí não', 'Checklist 100 kỹ năng đầu đời']
   }
 ]
 
-// Featured courses data
-const featuredCourses = [
-  {
-    id: 1,
-    title: 'GÓI HỌC THỬ 1 BUỔI 99K',
-    image: 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=600&h=400&fit=crop',
-    duration: '1 buổi',
+// Featured courses data - Top 6 featured courses
+const featuredCourses = mockCourses
+  .filter(course => course.featured)
+  .slice(0, 6)
+  .map(course => ({
+    id: course.id,
+    title: course.title,
+    image: course.thumbnailUrl || 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=600&h=400&fit=crop',
+    duration: course.durationMinutes === 0 ? 'Truy cập không giới hạn' : `${Math.round(course.durationMinutes / 60)} giờ`,
     instructor: 'Chuyên gia IPD8',
-    benefitsMom: 'Hiểu rõ phương pháp',
-    benefitsBaby: 'Đánh giá phát triển',
-    price: '99.000đ'
-  },
-  {
-    id: 2,
-    title: 'GÓI COMBO 06 BUỔI',
-    image: 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=600&h=400&fit=crop',
-    duration: '6 buổi',
-    instructor: 'Chuyên gia IPD8',
-    benefitsMom: 'Kiến thức toàn diện',
-    benefitsBaby: 'Phát triển đúng giai đoạn',
-    price: 'Liên hệ'
-  },
-  {
-    id: 3,
-    title: 'GÓI 03 THÁNG',
-    image: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=600&h=400&fit=crop',
-    duration: '3 tháng',
-    instructor: 'Chuyên gia IPD8',
-    benefitsMom: 'Hỗ trợ liên tục',
-    benefitsBaby: 'Theo dõi tiến độ',
-    price: 'Liên hệ'
-  },
-  {
-    id: 4,
-    title: 'GÓI 06 THÁNG',
-    image: 'https://images.unsplash.com/photo-1476703993599-0035a21b17a9?w=600&h=400&fit=crop',
-    duration: '6 tháng',
-    instructor: 'Chuyên gia IPD8',
-    benefitsMom: 'Chương trình dài hạn',
-    benefitsBaby: 'Phát triển bền vững',
-    price: 'Liên hệ'
-  },
-  {
-    id: 5,
-    title: 'GÓI 12 THÁNG',
-    image: 'https://images.unsplash.com/photo-1566004100631-35d015d6a491?w=600&h=400&fit=crop',
-    duration: '12 tháng',
-    instructor: 'Chuyên gia IPD8',
-    benefitsMom: 'Đồng hành trọn năm',
-    benefitsBaby: 'Phát triển toàn diện',
-    price: 'Liên hệ'
-  },
-  {
-    id: 6,
-    title: 'GÓI 24 THÁNG',
-    image: 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=600&h=400&fit=crop',
-    duration: '24 tháng',
-    instructor: 'Chuyên gia IPD8',
-    benefitsMom: 'Hỗ trợ lâu dài',
-    benefitsBaby: 'Hành trình phát triển',
-    price: 'Liên hệ'
-  }
-]
+    benefitsMom: course.benefitsMom || '',
+    benefitsBaby: course.benefitsBaby || '',
+    price: course.price === 0 ? 'Miễn phí' : formatCurrency(course.price),
+    slug: course.slug
+  }))
 
 // Experts data
 const experts = [
@@ -229,26 +187,129 @@ const testimonials = [
 ]
 
 export default function HomePage() {
+  const [sectionHeight, setSectionHeight] = useState<string>('100vh')
+  const [headerHeight, setHeaderHeight] = useState<string>('104px')
+
+  useEffect(() => {
+    // Function to get actual header height from DOM
+    const updateHeaderHeight = () => {
+      if (typeof window === 'undefined') return
+
+      // Get actual header height from DOM
+      const header = document.querySelector('header')
+      if (header) {
+        const actualHeight = header.offsetHeight
+        setHeaderHeight(`${actualHeight}px`)
+      } else {
+        // Fallback to CSS variable
+        setHeaderHeight(window.innerWidth >= 768 ? '140px' : '104px')
+      }
+    }
+
+    // Function to calculate and set section height
+    const updateSectionHeight = () => {
+      if (typeof window === 'undefined') return
+
+      // Get actual viewport height
+      const viewportHeight = window.visualViewport?.height || window.innerHeight
+      
+      // Get actual header height from DOM
+      const header = document.querySelector('header')
+      const headerHeight = header ? header.offsetHeight : (window.innerWidth >= 768 ? 140 : 104)
+      
+      // Calculate section height
+      const calculatedHeight = viewportHeight - headerHeight
+      
+      // Set height in pixels for precision
+      setSectionHeight(`${calculatedHeight}px`)
+    }
+
+    // Initial calculations
+    updateHeaderHeight()
+    updateSectionHeight()
+
+    // Update on resize
+    const handleResize = () => {
+      // Use requestAnimationFrame to ensure DOM is updated
+      requestAnimationFrame(() => {
+        updateHeaderHeight()
+        updateSectionHeight()
+      })
+    }
+
+    // Listen to all relevant events
+    window.addEventListener('resize', handleResize)
+    window.addEventListener('orientationchange', handleResize)
+    
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize)
+      window.visualViewport.addEventListener('scroll', handleResize)
+    }
+
+    // Also update when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', updateSectionHeight)
+    } else {
+      updateSectionHeight()
+    }
+
+    // Update after a short delay to ensure header is rendered
+    const timeoutId = setTimeout(updateSectionHeight, 100)
+
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      window.removeEventListener('orientationchange', handleResize)
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleResize)
+        window.visualViewport.removeEventListener('scroll', handleResize)
+      }
+      document.removeEventListener('DOMContentLoaded', updateSectionHeight)
+      clearTimeout(timeoutId)
+    }
+  }, [])
+
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Hero Section with Course Category Slider */}
-      <section className="relative gradient-primary text-white min-h-[600px] md:min-h-[700px] lg:min-h-[800px] flex flex-col w-full max-w-full overflow-visible">
-        <div className="absolute inset-0 bg-black/10 z-0"></div>
-        <div className="w-full max-w-[1400px] mx-auto px-4 md:px-6 lg:px-12 xl:px-16 relative z-10 flex flex-col flex-grow py-4 md:py-6 lg:py-8">
+      {/* Hero Section - Independent section, starts right after navbar */}
+      <section 
+        className="relative gradient-primary text-white flex flex-col items-center justify-center w-full max-w-full overflow-hidden" 
+        style={{ 
+          marginTop: headerHeight,
+          marginBottom: 0,
+          paddingTop: 0,
+          paddingBottom: 0,
+          height: sectionHeight,
+          minHeight: sectionHeight,
+          maxHeight: sectionHeight,
+          position: 'relative',
+          zIndex: 1
+        }}
+      >
+        {/* Overlay - phủ toàn bộ section từ mép dưới navbar */}
+        <div 
+          className="absolute bg-black/10 z-0" 
+          style={{ 
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0
+          }}
+        ></div>
+        <div className="container-custom max-w-[1400px] relative z-10 flex flex-col items-center justify-center w-full h-full pt-6 md:pt-8 lg:pt-10 pb-4 md:pb-6 lg:pb-8">
           <motion.div
             initial="initial"
             animate="animate"
             variants={fadeInUp}
-            className="text-center mb-6 md:mb-8 lg:mb-10 mt-5 relative z-10"
+            className="text-center mb-1 md:mb-1.5 lg:mb-2 relative z-10 w-full flex flex-col items-center justify-center"
           >
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-3 md:mb-4 lg:mb-5 leading-tight break-words px-2">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-0.5 md:mb-1 lg:mb-1 leading-tight break-words px-2">
               TRUNG TÂM 1.000 NGÀY VÒNG ĐẦU ĐỜI
             </h1>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-3 md:mb-4 lg:mb-5 leading-tight break-words px-2">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-1.5 md:mb-2 lg:mb-2.5 leading-tight break-words px-2">
               <span className="text-yellow-300">VIỆT NAM - NEW ZEALAND IPD8</span>
             </h2>
             <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/90 max-w-3xl mx-auto break-words px-4">
-              Đồng hành cùng mẹ và bé từ thai kỳ đến 12 tuổi
+              Đồng hành cùng mẹ và bé từ thai kỳ đến 02 tuổi
             </p>
           </motion.div>
 
@@ -257,26 +318,26 @@ export default function HomePage() {
             initial="initial"
             animate="animate"
             variants={fadeIn}
-            className="relative flex-grow flex flex-col w-full max-w-full overflow-visible mt-6 md:mt-8 lg:mt-10"
+            className="relative flex-grow flex flex-col items-center justify-center w-full max-w-full overflow-visible mt-1 md:mt-1.5 lg:mt-2"
           >
-            {/* Desktop Grid - 3 cards always visible */}
-            <div className="hidden lg:grid lg:grid-cols-3 gap-4 xl:gap-6 w-full max-w-full px-4 xl:px-6 py-2 relative z-20">
-              {coursePackages.map((pkg, index) => (
+            {/* Desktop Grid - 2 cards always visible */}
+            <div className="hidden lg:flex lg:justify-center lg:items-center w-full max-w-full px-4 xl:px-6 py-2 relative z-20" style={{ gap: '1rem' }}>
+              {coursePackages.slice(0, 2).map((pkg, index) => (
                 <motion.div
                   key={pkg.id}
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1, duration: 0.5 }}
-                  className="h-full w-full max-w-full min-w-0 relative z-20 p-2"
+                  className="h-full w-full max-w-[380px] min-w-0 relative z-20 p-2"
                 >
-                  <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-lg h-full flex flex-col group hover:scale-105 transition-all duration-300 rounded-2xl overflow-hidden w-full max-w-full relative z-20" style={{ transformOrigin: 'center', borderRadius: '1rem', willChange: 'transform', backfaceVisibility: 'hidden' }}>
-                    <div className="relative h-48 lg:h-56 xl:h-64 overflow-hidden shrink-0 w-full">
+                  <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-card-lg h-full flex flex-col group hover:shadow-card-2xl hover:scale-105 hover:-translate-y-2 transition-all duration-300 rounded-2xl overflow-hidden w-full max-w-full relative z-20" style={{ transformOrigin: 'center', borderRadius: '1rem', willChange: 'transform', backfaceVisibility: 'hidden' }}>
+                    <div className="relative h-64 lg:h-72 xl:h-80 overflow-hidden shrink-0 w-full" style={{ aspectRatio: '3/4' }}>
                       <Image
                         src={pkg.image}
                         alt={pkg.title}
                         fill
                         className="object-cover group-hover:scale-110 transition-transform duration-500"
-                        sizes="(max-width: 1024px) 50vw, 33vw"
+                        sizes="(max-width: 1024px) 380px, 380px"
                       />
                     </div>
                     <CardContent className="p-5 lg:p-6 flex flex-col flex-grow min-w-0">
@@ -294,7 +355,7 @@ export default function HomePage() {
                         </div>
                       </div>
                       <div className="mt-auto pt-4 w-full">
-                        <Link href={pkg.id === 3 ? ROUTES.TRIAL : `${ROUTES.COURSES}?package=${pkg.id}`} className="block w-full">
+                        <Link href={pkg.id === 1 ? '/cho-con-khoi-dau-tuyet-voi-nhat' : pkg.id === 2 ? '/cho-con-suc-khoe-tuyet-voi-nhat' : pkg.id === 3 ? '/cho-con-su-hoc-tuyet-voi-nhat' : `${ROUTES.COURSES}?package=${pkg.id}`} className="block w-full">
                           <Button className="w-full bg-transparent border-2 border-[#F441A5] text-[#F441A5] hover:bg-[#F441A5] hover:text-white hover:scale-105 transition-all duration-200 text-sm py-2.5 whitespace-nowrap">
                             Chi tiết gói học
                           </Button>
@@ -323,13 +384,13 @@ export default function HomePage() {
                 autoplay={{ delay: 5000, disableOnInteraction: false }}
                 loop
                 className="w-full hero-swiper"
-                style={{ paddingBottom: '40px', width: '100%', maxWidth: '100%', paddingTop: '8px', paddingLeft: '8px', paddingRight: '8px' }}
+                style={{ paddingBottom: '35px', width: '100%', maxWidth: '100%', paddingTop: '7px', paddingLeft: '7px', paddingRight: '7px' }}
               >
                 {coursePackages.map((pkg) => (
                   <SwiperSlide key={pkg.id} style={{ height: 'auto', width: '100%', maxWidth: '100%' }}>
                     <div className="h-full px-1 sm:px-2 py-2 w-full max-w-full relative z-20">
-                      <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-lg h-full flex flex-col group hover:scale-105 transition-all duration-300 rounded-2xl overflow-hidden w-full max-w-full relative z-20" style={{ transformOrigin: 'center', borderRadius: '1rem', willChange: 'transform', backfaceVisibility: 'hidden' }}>
-                        <div className="relative h-40 md:h-48 overflow-hidden shrink-0 w-full">
+                      <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-card-lg h-full flex flex-col group hover:shadow-card-2xl hover:scale-105 hover:-translate-y-2 transition-all duration-300 rounded-2xl overflow-hidden w-full max-w-full relative z-20" style={{ transformOrigin: 'center', borderRadius: '1rem', willChange: 'transform', backfaceVisibility: 'hidden' }}>
+                        <div className="relative h-56 md:h-64 overflow-hidden shrink-0 w-full" style={{ aspectRatio: '3/4' }}>
                           <Image
                             src={pkg.image}
                             alt={pkg.title}
@@ -353,7 +414,7 @@ export default function HomePage() {
                             </div>
                           </div>
                           <div className="mt-auto pt-3 md:pt-4 w-full">
-                            <Link href={pkg.id === 3 ? ROUTES.TRIAL : `${ROUTES.COURSES}?package=${pkg.id}`} className="block w-full">
+                            <Link href={pkg.id === 1 ? '/cho-con-khoi-dau-tuyet-voi-nhat' : pkg.id === 2 ? '/cho-con-suc-khoe-tuyet-voi-nhat' : pkg.id === 3 ? '/cho-con-su-hoc-tuyet-voi-nhat' : `${ROUTES.COURSES}?package=${pkg.id}`} className="block w-full">
                               <Button className="w-full bg-transparent border-2 border-[#F441A5] text-[#F441A5] hover:bg-[#F441A5] hover:text-white hover:scale-105 transition-all duration-200 text-xs md:text-sm py-2 md:py-2.5 whitespace-nowrap">
                                 Chi tiết gói học
                               </Button>
@@ -367,10 +428,10 @@ export default function HomePage() {
               </Swiper>
               
               {/* Custom Navigation - Only for mobile/tablet */}
-              <button className="swiper-button-prev-custom hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-all hover:scale-110 items-center justify-center" style={{ maxWidth: '48px', maxHeight: '48px', width: '48px', height: '48px' }}>
+              <button className="swiper-button-prev-custom hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-all hover:scale-110 items-center justify-center" style={{ maxWidth: '42px', maxHeight: '42px', width: '42px', height: '42px' }}>
                 <ChevronLeft className="h-5 w-5 text-[#F441A5]" />
               </button>
-              <button className="swiper-button-next-custom hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-all hover:scale-110 items-center justify-center" style={{ maxWidth: '48px', maxHeight: '48px', width: '48px', height: '48px' }}>
+              <button className="swiper-button-next-custom hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-white/90 hover:bg-white rounded-full p-2 shadow-lg transition-all hover:scale-110 items-center justify-center" style={{ maxWidth: '42px', maxHeight: '42px', width: '42px', height: '42px' }}>
                 <ChevronRight className="h-5 w-5 text-[#F441A5]" />
               </button>
               
@@ -382,21 +443,22 @@ export default function HomePage() {
       </section>
 
       {/* Why Choose IPD8 Section */}
-      <section className="section-wrapper bg-white w-full max-w-full overflow-x-hidden">
-        <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+      <section className="section-wrapper bg-white w-full max-w-full overflow-x-hidden relative" style={{ zIndex: 2, marginTop: 0 }}>
+        <div className="container-custom">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div
               initial="initial"
               whileInView="animate"
               viewport={{ once: true, margin: "-100px" }}
               variants={fadeInUp}
-              className="relative h-[500px] rounded-2xl overflow-hidden shadow-2xl"
+              className="relative h-[437.5px] rounded-2xl overflow-hidden shadow-2xl"
             >
-              <Image
-                src="https://images.unsplash.com/photo-1566004100631-35d015d6a491?w=800&h=600&fit=crop"
-                alt="Why Choose IPD8"
-                fill
-                className="object-cover"
+              <iframe
+                src="https://drive.google.com/file/d/1VZ4ngD60fNvjliydEaeghBFGAgXI4cdi/preview"
+                className="w-full h-full border-0"
+                allow="autoplay; encrypted-media"
+                allowFullScreen
+                title="Tại sao chọn IPD8"
               />
             </motion.div>
             
@@ -431,7 +493,7 @@ export default function HomePage() {
 
       {/* Experts Slider Section */}
       <section className="section-wrapper bg-gray-50 overflow-visible w-full max-w-full">
-        <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8 overflow-visible">
+        <div className="container-custom overflow-visible">
           <motion.div
             initial="initial"
             whileInView="animate"
@@ -472,7 +534,7 @@ export default function HomePage() {
               {experts.map((expert) => (
                 <SwiperSlide key={expert.id} style={{ height: 'auto' }}>
                   <div className="px-1 sm:px-2 py-2 h-full">
-                    <Card className="bg-white border-0 shadow-lg overflow-hidden h-full flex flex-col group hover:shadow-2xl hover:scale-105 transition-all duration-300 w-full max-w-full">
+                    <Card className="bg-white border-0 shadow-card-lg overflow-hidden h-full flex flex-col group hover:shadow-card-2xl hover:scale-105 hover:-translate-y-2 transition-all duration-300 w-full max-w-full">
                       <div className="relative h-64 overflow-hidden shrink-0 w-full">
                         <Image
                           src={expert.image}
@@ -503,9 +565,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Featured Courses Section */}
-      <section className="section-wrapper bg-white">
-        <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+      {/* Experts Slider Section 2 */}
+      <section className="section-wrapper bg-white overflow-visible w-full max-w-full">
+        <div className="container-custom overflow-visible">
           <motion.div
             initial="initial"
             whileInView="animate"
@@ -513,38 +575,39 @@ export default function HomePage() {
             variants={fadeInUp}
             className="text-center mb-12"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 px-4">
               CÁC GÓI HỌC NỔI BẬT
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto px-4">
               Chọn gói học phù hợp với nhu cầu của bạn
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8 mb-12 py-6 px-2 w-full max-w-full">
-            {featuredCourses.map((course, index) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8 mb-12 py-6 w-full max-w-full">
+            {featuredCourses.slice(0, 6).map((course, index) => (
               <motion.div
-                key={course.id}
+                key={`course-2-${course.id}`}
                 initial="initial"
                 whileInView="animate"
                 viewport={{ once: true, margin: "-50px" }}
                 variants={scaleIn}
                 transition={{ delay: index * 0.1 }}
-                className="h-full w-full max-w-full min-w-0 p-2"
+                className="h-full w-full max-w-full min-w-0"
               >
-                <Card className="bg-white border-2 border-gray-100 shadow-lg overflow-hidden group hover:shadow-2xl hover:scale-105 hover:border-[#F441A5] transition-all duration-300 h-full w-full max-w-full">
-                  <div className="relative h-48 overflow-hidden w-full">
+                <div className="px-1 sm:px-2 py-2 h-full">
+                  <Card className="bg-white border-0 shadow-card-lg overflow-hidden h-full flex flex-col w-full max-w-full">
+                    <div className="relative h-64 overflow-hidden shrink-0 w-full">
                     <Image
                       src={course.image}
                       alt={course.title}
                       fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-500"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        className="object-cover scale-110"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     />
                   </div>
-                  <CardContent className="p-4 md:p-6 min-w-0">
+                    <CardContent className="p-4 md:p-6 flex flex-col flex-grow min-w-0">
                     <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-4 line-clamp-2 break-words">{course.title}</h3>
-                    <div className="space-y-2 mb-4 text-sm text-gray-600 min-w-0">
+                      <div className="space-y-2 mb-4 text-sm text-gray-600 min-w-0 flex-grow">
                       <div className="flex items-center gap-2 min-w-0">
                         <Clock className="h-4 w-4 shrink-0" />
                         <span className="truncate">Thời lượng: {course.duration}</span>
@@ -562,13 +625,16 @@ export default function HomePage() {
                         <span className="line-clamp-1 break-words">Lợi ích cho bé: {course.benefitsBaby}</span>
                       </div>
                     </div>
-                    <Link href={`${ROUTES.COURSES}?course=${course.id}`} className="block w-full">
+                      <div className="mt-auto">
+                    <Link href={course.slug ? `/${course.slug}` : `${ROUTES.COURSES}`} className="block w-full">
                       <Button className="w-full bg-transparent border-2 border-[#F441A5] text-[#F441A5] hover:bg-[#F441A5] hover:text-white hover:scale-105 transition-all duration-200 text-sm">
                         Chi tiết gói học
                       </Button>
                     </Link>
+                      </div>
                   </CardContent>
                 </Card>
+                </div>
               </motion.div>
             ))}
           </div>
@@ -578,7 +644,7 @@ export default function HomePage() {
             whileInView="animate"
             viewport={{ once: true }}
             variants={fadeInUp}
-            className="text-center"
+            className="text-center mt-12"
           >
             <Link href={ROUTES.COURSES}>
               <Button size="lg" className="bg-transparent border-2 border-[#F441A5] text-[#F441A5] hover:bg-[#F441A5] hover:text-white hover:scale-105 transition-all duration-200 px-8 py-6 text-lg">
@@ -589,6 +655,14 @@ export default function HomePage() {
           </motion.div>
         </div>
       </section>
+
+      {/* Packages Section - Slider */}
+      <PackageSection
+        title="Gói học 8i - Giải pháp toàn diện"
+        subtitle="Các gói học được thiết kế chuyên biệt cho từng giai đoạn phát triển của con, giúp mẹ đồng hành trọn vẹn trong 1.000 ngày vàng đầu đời"
+        packages={allPackages}
+        showLargeCard={false}
+      />
 
       {/* Events Grid Section */}
       <section 
@@ -604,7 +678,7 @@ export default function HomePage() {
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/90 to-white/95 z-0"></div>
         
-        <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8 relative z-10">
+        <div className="container-custom relative z-10">
           <motion.div
             initial="initial"
             whileInView="animate"
@@ -628,7 +702,7 @@ export default function HomePage() {
                 transition={{ delay: index * 0.1 }}
                 className="h-full w-full max-w-full min-w-0 p-2"
               >
-                <Card className="bg-white border-0 shadow-lg overflow-hidden group hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer h-full w-full max-w-full">
+                <Card className="bg-white border-0 shadow-card-lg overflow-hidden group hover:shadow-card-2xl hover:scale-105 hover:-translate-y-2 transition-all duration-300 cursor-pointer h-full w-full max-w-full">
                   <div className="relative h-48 overflow-hidden w-full">
                     <Image
                       src={event.image}
@@ -671,7 +745,7 @@ export default function HomePage() {
 
       {/* Expert Testimonials Section */}
       <section className="section-wrapper bg-white">
-        <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+        <div className="container-custom">
           <motion.div
             initial="initial"
             whileInView="animate"
@@ -714,7 +788,7 @@ export default function HomePage() {
                 {testimonials.map((testimonial) => (
                   <SwiperSlide key={testimonial.id} style={{ height: 'auto' }}>
                     <div className="px-1 sm:px-2 py-2 h-full">
-                      <Card className="bg-white border-2 border-gray-100 shadow-lg p-4 md:p-6 lg:p-8 h-full flex flex-col w-full max-w-full">
+                      <Card className="bg-white border-2 border-gray-200 shadow-card-lg p-4 md:p-6 lg:p-8 h-full flex flex-col w-full max-w-full hover:shadow-card-2xl hover:-translate-y-2 transition-all duration-300">
                         <div className="flex flex-col items-center text-center mb-4 md:mb-6 shrink-0">
                           <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden mb-4 ring-4 ring-[#F441A5]/20">
                             <Image
@@ -756,34 +830,55 @@ export default function HomePage() {
       {/* Final CTA Section */}
       <section className="section-wrapper gradient-primary text-white relative w-full max-w-full overflow-x-hidden">
         <div className="absolute inset-0 bg-black/10 z-0"></div>
-        <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8 relative z-10 text-center">
-          <motion.div
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            variants={fadeInUp}
-            className="max-w-3xl mx-auto space-y-8"
-          >
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
-              SẴN SÀNG BẮT ĐẦU HÀNH TRÌNH?
-            </h2>
-            <p className="text-xl md:text-2xl text-white/90 mb-8">
-              Tham gia cùng hàng nghìn gia đình đã tin tưởng chọn IPD8 để đồng hành cùng con
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href={ROUTES.COURSES}>
-                <Button size="lg" className="bg-white text-[#F441A5] hover:bg-gray-100 hover:scale-105 transition-all duration-200 px-8 py-6 text-lg font-semibold">
-                  Đăng ký ngay
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Link href={ROUTES.CONTACT}>
-                <Button size="lg" className="bg-transparent border-2 border-white text-white hover:bg-white/10 hover:scale-105 transition-all duration-200 px-8 py-6 text-lg font-semibold">
-                  Liên hệ tư vấn
-                </Button>
-              </Link>
-            </div>
-          </motion.div>
+        <div className="container-custom relative z-10">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            {/* Left Column - Text Content */}
+            <motion.div
+              initial="initial"
+              whileInView="animate"
+              viewport={{ once: true }}
+              variants={fadeInUp}
+              className="space-y-8 text-center lg:text-left"
+            >
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold">
+                SẴN SÀNG BẮT ĐẦU HÀNH TRÌNH?
+              </h2>
+              <p className="text-xl md:text-2xl text-white/90">
+                Tham gia cùng hàng nghìn gia đình đã tin tưởng chọn IPD8 để đồng hành cùng con
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                <Link href={ROUTES.COURSES}>
+                  <Button size="lg" className="bg-white text-[#F441A5] hover:bg-gray-100 hover:scale-105 transition-all duration-200 px-8 py-6 text-lg font-semibold">
+                    Đăng ký ngay
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+                <Link href={ROUTES.CONTACT}>
+                  <Button size="lg" className="bg-transparent border-2 border-white text-white hover:bg-white/10 hover:scale-105 transition-all duration-200 px-8 py-6 text-lg font-semibold">
+                    Liên hệ tư vấn
+                  </Button>
+                </Link>
+              </div>
+            </motion.div>
+
+            {/* Right Column - Video */}
+            <motion.div
+              initial="initial"
+              whileInView="animate"
+              viewport={{ once: true }}
+              variants={fadeInUp}
+              className="relative w-full rounded-2xl overflow-hidden shadow-2xl"
+              style={{ aspectRatio: '16/9' }}
+            >
+              <iframe
+                src="https://drive.google.com/file/d/1QLhnW_tJ9HxYW2sXwikB6EiHLNiAfGfY/preview"
+                className="w-full h-full border-0"
+                allow="autoplay; encrypted-media"
+                allowFullScreen
+                title="Sẵn sàng bắt đầu hành trình cùng IPD8"
+              />
+            </motion.div>
+          </div>
         </div>
       </section>
     </div>

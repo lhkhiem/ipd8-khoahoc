@@ -55,13 +55,14 @@ const nextConfig = {
               process.env.NODE_ENV === 'development'
                 ? "connect-src 'self' http://localhost:* http://127.0.0.1:* https://www.youtube.com https://meet.google.com https://zoom.us https://maps.googleapis.com https://maps.gstatic.com"
                 : "connect-src 'self' https://www.youtube.com https://meet.google.com https://zoom.us https://maps.googleapis.com https://maps.gstatic.com",
-              "frame-src 'self' https://www.youtube.com https://meet.google.com https://zoom.us https://www.google.com https://maps.google.com",
+              "frame-src 'self' https://www.youtube.com https://meet.google.com https://zoom.us https://www.google.com https://maps.google.com https://drive.google.com",
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",
               "frame-ancestors 'self'",
-              "upgrade-insecure-requests",
-            ].join('; ')
+              // Only upgrade insecure requests in production
+              process.env.NODE_ENV === 'production' ? "upgrade-insecure-requests" : "",
+            ].filter(Boolean).join('; ')
           },
         ],
       },

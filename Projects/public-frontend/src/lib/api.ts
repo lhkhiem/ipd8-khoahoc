@@ -24,6 +24,12 @@ export async function apiRequest<T>(
 ): Promise<{ success: boolean; data?: T; error?: string }> {
   try {
     const url = buildApiUrl(endpoint);
+    
+    // Log the request URL in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[API] Requesting:', url);
+    }
+    
     const response = await fetch(url, {
       ...options,
       credentials: 'include', // Important for cookies
@@ -57,10 +63,38 @@ export async function apiRequest<T>(
       data: data.data || data,
     };
   } catch (error: any) {
-    console.error('[API] Request error:', error);
+    // Handle different types of fetch errors
+    let errorMessage = 'Network error occurred';
+    const apiUrl = buildApiUrl(endpoint);
+    
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      // This usually means server is not running, CORS issue, or network problem
+      errorMessage = `Unable to connect to API at ${apiUrl}`;
+      
+      // Only log detailed error in development and not for auth endpoints (expected to fail)
+      if (process.env.NODE_ENV === 'development' && !endpoint.includes('/auth/me')) {
+        console.warn(
+          `[API] Connection failed to ${endpoint}\n` +
+          `Possible causes: API server not running, CORS issue, or network problem\n` +
+          `URL: ${apiUrl}`
+        );
+      }
+    } else if (error.message) {
+      errorMessage = error.message;
+      // Only log non-network errors
+      if (process.env.NODE_ENV === 'development' && !endpoint.includes('/auth/me')) {
+        console.error('[API] Request error:', {
+          endpoint,
+          url: apiUrl,
+          error: error.message,
+          type: error.constructor.name,
+        });
+      }
+    }
+    
     return {
       success: false,
-      error: error.message || 'Network error occurred',
+      error: errorMessage,
     };
   }
 }
@@ -76,7 +110,9 @@ export const authApi = {
     email: string;
     password: string;
     name: string;
-    phone?: string;
+    phone: string;
+    location?: string;
+    age?: number;
   }) => {
     return apiRequest<{
       token: string;

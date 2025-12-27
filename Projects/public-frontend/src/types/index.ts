@@ -80,6 +80,32 @@ export interface Enrollment {
   progress?: Progress[]
 }
 
+export interface Package {
+  id: string
+  slug: string
+  title: string
+  description: string
+  price: number
+  originalPrice?: number
+  thumbnailUrl?: string
+  imageUrl?: string
+  duration: string // e.g., "6 buổi", "30 buổi", "180 buổi"
+  sessions: number // Số buổi học
+  targetAudience: string[] // ['me-bau', '0-1-tuoi', '1-2-tuoi']
+  features: string[] // Danh sách tính năng/khóa học bao gồm
+  includedCourses?: string[] // ID các khóa học được bao gồm
+  benefits: string[] // Lợi ích của gói
+  bonuses?: string[] // Quà tặng kèm
+  memberPrice?: {
+    silver?: number
+    gold?: number
+  }
+  featured?: boolean
+  popular?: boolean // Gói phổ biến nhất (card giữa lớn)
+  createdAt: string
+  updatedAt: string
+}
+
 export interface Progress {
   id: string
   enrollmentId: string

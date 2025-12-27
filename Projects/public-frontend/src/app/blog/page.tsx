@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useSearchParams, useRouter } from 'next/navigation'
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Breadcrumb } from '@/components/shared/breadcrumb'
 import { ROUTES } from '@/lib/constants'
-import { Calendar, Clock, ArrowRight, User, FileText, Megaphone, Heart, Building2 } from 'lucide-react'
+import { Calendar, Clock, ArrowRight, User, Megaphone, Heart, Building2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // Mock articles data organized by category
@@ -25,7 +25,8 @@ const newsArticles = [
     author: 'IPD8 Editorial',
     authorImage: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=200&h=200&fit=crop',
     readTime: '5 phút',
-    tags: ['Hội thảo', 'Chuyên gia']
+    tags: ['Hội thảo', 'Chuyên gia'],
+    slug: 'ipd8-to-chuc-hoi-thao-nuoi-con-khoa-hoc'
   },
   {
     id: 2,
@@ -37,7 +38,8 @@ const newsArticles = [
     author: 'IPD8 Research Team',
     authorImage: 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=200&h=200&fit=crop',
     readTime: '7 phút',
-    tags: ['Nghiên cứu', 'Khoa học']
+    tags: ['Nghiên cứu', 'Khoa học'],
+    slug: 'nghien-cuu-moi-ve-tam-quan-trong-1000-ngay-dau-doi'
   },
   {
     id: 3,
@@ -49,7 +51,8 @@ const newsArticles = [
     author: 'IPD8 Community',
     authorImage: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=200&h=200&fit=crop',
     readTime: '6 phút',
-    tags: ['Cộng đồng', 'Hỗ trợ']
+    tags: ['Cộng đồng', 'Hỗ trợ'],
+    slug: 'ipd8-mo-rong-chuong-trinh-ho-tro-gia-dinh-kho-khan'
   },
   {
     id: 4,
@@ -61,7 +64,8 @@ const newsArticles = [
     author: 'IPD8 Education',
     authorImage: 'https://images.unsplash.com/photo-1551601651-2a8555f1a136?w=200&h=200&fit=crop',
     readTime: '5 phút',
-    tags: ['Giáo dục', 'Montessori']
+    tags: ['Giáo dục', 'Montessori'],
+    slug: 'phuong-phap-giao-duc-som-montessori-tai-ipd8'
   },
   {
     id: 5,
@@ -73,7 +77,8 @@ const newsArticles = [
     author: 'IPD8 Partnership',
     authorImage: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop',
     readTime: '6 phút',
-    tags: ['Hợp tác', 'Quốc tế']
+    tags: ['Hợp tác', 'Quốc tế'],
+    slug: 'hop-tac-voi-chuyen-gia-quoc-te-phat-trien-tre-em'
   }
 ]
 
@@ -90,7 +95,8 @@ const eventArticles = [
     readTime: '3 phút',
     eventDate: '2026-01-15',
     location: 'Trung tâm IPD8, Hà Nội',
-    tags: ['Workshop', 'Dinh dưỡng']
+    tags: ['Workshop', 'Dinh dưỡng'],
+    slug: 'workshop-dinh-duong-me-bau-tre-nho'
   },
   {
     id: 7,
@@ -104,7 +110,8 @@ const eventArticles = [
     readTime: '4 phút',
     eventDate: '2026-01-20',
     location: 'Trung tâm IPD8, TP. Hồ Chí Minh',
-    tags: ['Hội thảo', 'Vận động']
+    tags: ['Hội thảo', 'Vận động'],
+    slug: 'hoi-thao-phat-trien-van-dong-tre-so-sinh'
   },
   {
     id: 8,
@@ -118,7 +125,8 @@ const eventArticles = [
     readTime: '5 phút',
     eventDate: '2026-02-10',
     location: 'Trung tâm Hội nghị Quốc gia, Hà Nội',
-    tags: ['Ngày hội', 'Gia đình']
+    tags: ['Ngày hội', 'Gia đình'],
+    slug: 'ngay-hoi-gia-dinh-ipd8-2026'
   },
   {
     id: 9,
@@ -132,7 +140,8 @@ const eventArticles = [
     readTime: '4 phút',
     eventDate: '2026-01-25',
     location: 'Trung tâm IPD8, Hà Nội',
-    tags: ['Workshop', 'Tâm lý']
+    tags: ['Workshop', 'Tâm lý'],
+    slug: 'workshop-tam-ly-tre-em-dong-hanh-cung-con'
   },
   {
     id: 10,
@@ -146,7 +155,8 @@ const eventArticles = [
     readTime: '3 phút',
     eventDate: '2026-02-15',
     location: 'Bảo tàng Phụ nữ Việt Nam, Hà Nội',
-    tags: ['Triển lãm', 'Nghệ thuật']
+    tags: ['Triển lãm', 'Nghệ thuật'],
+    slug: 'trien-lam-hanh-trinh-1000-ngay-dau-doi'
   }
 ]
 
@@ -207,9 +217,9 @@ function ArticleSection({
   subtitle?: string
   articles: typeof newsArticles
   sectionId: string
-}) {
+ }) {
   const featuredArticle = articles[0]
-  const secondaryArticles = articles.slice(1, 5) // 4 articles for 2x2 grid
+  const secondaryArticles = articles.slice(1, 5)
   const gridArticles = articles.slice(5)
 
   const formatDate = (dateString: string) => {
@@ -223,7 +233,6 @@ function ArticleSection({
   return (
     <section id={sectionId} className="section-wrapper bg-white scroll-mt-20">
       <div className="container-custom">
-        {/* Section Header */}
         <motion.div
           initial="initial"
           whileInView="animate"
@@ -241,7 +250,6 @@ function ArticleSection({
           )}
         </motion.div>
 
-        {/* Featured Article */}
         {featuredArticle && (
           <motion.div
             initial="initial"
@@ -250,75 +258,76 @@ function ArticleSection({
             variants={fadeInUp}
             className="mb-12 max-w-6xl mx-auto"
           >
-            <Card className="bg-white border-2 border-gray-200 shadow-xl overflow-hidden group hover:shadow-2xl transition-all duration-300 rounded-2xl">
-              <div className="relative w-full h-[500px] md:h-[600px]">
-                <Image
-                  src={featuredArticle.image}
-                  alt={featuredArticle.title}
-                  fill
-                  className="object-cover group-hover:scale-110 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
-                <div className="absolute inset-0 flex flex-col justify-end p-8 md:p-12 text-white">
-                  <div className="mb-4">
-                    <Badge className="bg-gradient-to-r from-[#F441A5] to-[#FF5F6D] text-white mb-4">
-                      {featuredArticle.category}
-                    </Badge>
-                  </div>
-                  <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-white" style={{ lineHeight: '1.2' }}>
-                    {featuredArticle.title}
-                  </h3>
-                  <p className="text-lg md:text-xl text-white/90 mb-6 leading-relaxed max-w-4xl">
-                    {featuredArticle.excerpt}
-                  </p>
-                  <div className="flex flex-wrap items-center gap-4 mb-6 text-sm text-white/80">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      <span>{formatDate(featuredArticle.date)}</span>
+            <Link href={`/blog/${featuredArticle.slug}`}>
+              <Card className="bg-white border-2 border-gray-200 shadow-xl overflow-hidden group hover:shadow-2xl transition-all duration-300 rounded-2xl cursor-pointer">
+                <div className="relative w-full h-[500px] md:h-[600px]">
+                  <Image
+                    src={featuredArticle.image}
+                    alt={featuredArticle.title}
+                    fill
+                    className="object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
+                  <div className="absolute inset-0 flex flex-col justify-end p-8 md:p-12 text-white">
+                    <div className="mb-4">
+                      <Badge className="bg-gradient-to-r from-[#F441A5] to-[#FF5F6D] text-white mb-4">
+                        {featuredArticle.category}
+                      </Badge>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      <span>{featuredArticle.author}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      <span>{featuredArticle.readTime}</span>
-                    </div>
-                  </div>
-                  {(() => {
-                    const hasEventDate = 'eventDate' in featuredArticle && 
-                      featuredArticle.eventDate && 
-                      typeof featuredArticle.eventDate === 'string'
-                    const hasLocation = 'location' in featuredArticle && 
-                      featuredArticle.location && 
-                      typeof featuredArticle.location === 'string'
-                    
-                    if (!hasEventDate) return null
-                    
-                    return (
-                      <div className="mb-6 p-4 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20">
-                        <p className="text-sm font-semibold text-white mb-1">Ngày diễn ra:</p>
-                        <p className="text-lg text-white font-bold">{formatDate(featuredArticle.eventDate as string)}</p>
-                        {hasLocation ? (
-                          <p className="text-sm text-white/90 mt-2">{featuredArticle.location as string}</p>
-                        ) : null}
+                    <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-white" style={{ lineHeight: '1.2' }}>
+                      {featuredArticle.title}
+                    </h3>
+                    <p className="text-lg md:text-xl text-white/90 mb-6 leading-relaxed max-w-4xl">
+                      {featuredArticle.excerpt}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-4 mb-6 text-sm text-white/80">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        <span>{formatDate(featuredArticle.date)}</span>
                       </div>
-                    )
-                  })()}
-                  <Button
-                    className="w-full md:w-auto bg-gradient-to-r from-[#F441A5] to-[#FF5F6D] text-white hover:opacity-90 hover:scale-105 transition-all duration-200"
-                    size="lg"
-                  >
-                    Đọc ngay
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        <span>{featuredArticle.author}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        <span>{featuredArticle.readTime}</span>
+                      </div>
+                    </div>
+                    {(() => {
+                      const hasEventDate = 'eventDate' in featuredArticle && 
+                        featuredArticle.eventDate && 
+                        typeof featuredArticle.eventDate === 'string'
+                      const hasLocation = 'location' in featuredArticle && 
+                        featuredArticle.location && 
+                        typeof featuredArticle.location === 'string'
+                      
+                      if (!hasEventDate) return null
+                      
+                      return (
+                        <div className="mb-6 p-4 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20">
+                          <p className="text-sm font-semibold text-white mb-1">Ngày diễn ra:</p>
+                          <p className="text-lg text-white font-bold">{formatDate(featuredArticle.eventDate as string)}</p>
+                          {hasLocation ? (
+                            <p className="text-sm text-white/90 mt-2">{featuredArticle.location as string}</p>
+                          ) : null}
+                        </div>
+                      )
+                    })()}
+                    <Button
+                      className="btn-gradient-pink w-full md:w-auto"
+                      size="lg"
+                    >
+                      Đọc ngay
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            </Link>
           </motion.div>
         )}
 
-        {/* Secondary Articles - 2x2 Grid */}
         {secondaryArticles.length > 0 && (
           <motion.div
             variants={staggerContainer}
@@ -327,100 +336,97 @@ function ArticleSection({
             viewport={{ once: true, margin: '-50px' }}
             className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mb-12 max-w-6xl mx-auto px-2 py-2 overflow-visible"
           >
-            {secondaryArticles.map((article, index) => (
+            {secondaryArticles.map((article) => (
               <motion.div
                 key={article.id}
                 variants={postVariants}
               >
-                <Card className="bg-white border-2 border-gray-200 shadow-lg overflow-hidden group hover:shadow-2xl hover:border-[#F441A5] transition-all duration-300 h-full flex flex-col">
-                  <div className="relative h-48 overflow-hidden w-full">
-                    <Image
-                      src={article.image}
-                      alt={article.title}
-                      fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
-                    <div className="absolute top-4 left-4">
-                      <Badge className="bg-gradient-to-r from-[#F441A5] to-[#FF5F6D] text-white">
-                        {article.category}
-                      </Badge>
-                    </div>
-                  </div>
-                  <CardContent className="p-6 flex flex-col flex-grow">
-                    <div className="mb-4 flex-grow">
-                      <h4 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2" style={{ lineHeight: '1.2' }}>
-                        {article.title}
-                      </h4>
-                      <p className="text-sm text-gray-600 mb-4 line-clamp-3 leading-relaxed">
-                        {article.excerpt}
-                      </p>
-                    </div>
-
-                    <div className="space-y-3 mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="relative w-10 h-10 rounded-full overflow-hidden shrink-0">
-                          <Image
-                            src={article.authorImage}
-                            alt={article.author}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-900 truncate">
-                            {article.author}
-                          </p>
-                        </div>
+                <Link href={`/blog/${article.slug}`}>
+                  <Card className="bg-white border-2 border-gray-200 shadow-lg overflow-hidden group hover:shadow-2xl hover:border-[#F441A5] transition-all duration-300 h-full flex flex-col cursor-pointer">
+                    <div className="relative h-48 overflow-hidden w-full">
+                      <Image
+                        src={article.image}
+                        alt={article.title}
+                        fill
+                        className="object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
+                      <div className="absolute top-4 left-4">
+                        <Badge className="bg-gradient-to-r from-[#F441A5] to-[#FF5F6D] text-white">
+                          {article.category}
+                        </Badge>
                       </div>
-
-                      <div className="flex items-center gap-4 text-xs text-gray-500">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          <span>{formatDate(article.date)}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          <span>{article.readTime}</span>
-                        </div>
+                    </div>
+                    <CardContent className="p-6 flex flex-col flex-grow">
+                      <div className="mb-4 flex-grow">
+                        <h4 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2" style={{ lineHeight: '1.2' }}>
+                          {article.title}
+                        </h4>
+                        <p className="text-sm text-gray-600 mb-4 line-clamp-3 leading-relaxed">
+                          {article.excerpt}
+                        </p>
                       </div>
-
-                      {(() => {
-                        const hasEventDate = 'eventDate' in article && 
-                          article.eventDate && 
-                          typeof article.eventDate === 'string'
-                        const hasLocation = 'location' in article && 
-                          article.location && 
-                          typeof article.location === 'string'
-                        
-                        if (!hasEventDate) return null
-                        
-                        return (
-                          <div className="p-3 bg-gray-50 rounded-lg">
-                            <p className="text-xs font-semibold text-gray-700 mb-1">Ngày diễn ra:</p>
-                            <p className="text-sm text-[#F441A5] font-bold">{formatDate(article.eventDate as string)}</p>
-                            {hasLocation ? (
-                              <p className="text-xs text-gray-600 mt-1">{article.location as string}</p>
-                            ) : null}
+                      <div className="space-y-3 mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="relative w-10 h-10 rounded-full overflow-hidden shrink-0">
+                            <Image
+                              src={article.authorImage}
+                              alt={article.author}
+                              fill
+                              className="object-cover"
+                            />
                           </div>
-                        )
-                      })()}
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      className="w-full border-2 border-[#F441A5] text-[#F441A5] hover:bg-[#F441A5] hover:text-white transition-all duration-200"
-                    >
-                      Xem chi tiết
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </CardContent>
-                </Card>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-900 truncate">
+                              {article.author}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-4 w-4" />
+                            <span>{formatDate(article.date)}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-4 w-4" />
+                            <span>{article.readTime}</span>
+                          </div>
+                        </div>
+                        {(() => {
+                          const hasEventDate = 'eventDate' in article && 
+                            article.eventDate && 
+                            typeof article.eventDate === 'string'
+                          const hasLocation = 'location' in article && 
+                            article.location && 
+                            typeof article.location === 'string'
+                          
+                          if (!hasEventDate) return null
+                          
+                          return (
+                            <div className="p-3 bg-gray-50 rounded-lg">
+                              <p className="text-xs font-semibold text-gray-700 mb-1">Ngày diễn ra:</p>
+                              <p className="text-sm text-[#F441A5] font-bold">{formatDate(article.eventDate as string)}</p>
+                              {hasLocation ? (
+                                <p className="text-xs text-gray-600 mt-1">{article.location as string}</p>
+                              ) : null}
+                            </div>
+                          )
+                        })()}
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="w-full border-2 border-[#F441A5] text-[#F441A5] hover:bg-[#F441A5] hover:text-white transition-all duration-200"
+                      >
+                        Xem chi tiết
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </Link>
               </motion.div>
             ))}
           </motion.div>
         )}
 
-        {/* Additional Grid Articles */}
         {gridArticles.length > 0 && (
           <motion.div
             variants={staggerContainer}
@@ -429,50 +435,51 @@ function ArticleSection({
             viewport={{ once: true, margin: '-50px' }}
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 max-w-7xl mx-auto px-2 py-2 overflow-visible"
           >
-            {gridArticles.map((article, index) => (
+            {gridArticles.map((article) => (
               <motion.div
                 key={article.id}
                 variants={postVariants}
                 className="p-2"
               >
-                <Card className="bg-white border-2 border-gray-200 shadow-lg overflow-hidden group hover:shadow-2xl hover:border-[#F441A5] transition-all duration-300 h-full flex flex-col">
-                  <div className="relative h-40 overflow-hidden w-full">
-                    <Image
-                      src={article.image}
-                      alt={article.title}
-                      fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
-                    <div className="absolute top-2 left-2">
-                      <Badge className="bg-gradient-to-r from-[#F441A5] to-[#FF5F6D] text-white text-xs">
-                        {article.category}
-                      </Badge>
+                <Link href={`/blog/${article.slug}`}>
+                  <Card className="bg-white border-2 border-gray-200 shadow-lg overflow-hidden group hover:shadow-2xl hover:border-[#F441A5] transition-all duration-300 h-full flex flex-col cursor-pointer">
+                    <div className="relative h-40 overflow-hidden w-full">
+                      <Image
+                        src={article.image}
+                        alt={article.title}
+                        fill
+                        className="object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
+                      <div className="absolute top-2 left-2">
+                        <Badge className="bg-gradient-to-r from-[#F441A5] to-[#FF5F6D] text-white text-xs">
+                          {article.category}
+                        </Badge>
+                      </div>
                     </div>
-                  </div>
-                  <CardContent className="p-4 flex flex-col flex-grow">
-                    <h5 className="text-base font-bold text-gray-900 mb-2 line-clamp-2" style={{ lineHeight: '1.2' }}>
-                      {article.title}
-                    </h5>
-                    <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
-                      <Calendar className="h-3 w-3" />
-                      <span>{formatDate(article.date)}</span>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full border-2 border-[#F441A5] text-[#F441A5] hover:bg-[#F441A5] hover:text-white transition-all duration-200 text-xs"
-                    >
-                      Xem chi tiết
-                      <ArrowRight className="ml-1 h-3 w-3" />
-                    </Button>
-                  </CardContent>
-                </Card>
+                    <CardContent className="p-4 flex flex-col flex-grow">
+                      <h5 className="text-base font-bold text-gray-900 mb-2 line-clamp-2" style={{ lineHeight: '1.2' }}>
+                        {article.title}
+                      </h5>
+                      <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
+                        <Calendar className="h-3 w-3" />
+                        <span>{formatDate(article.date)}</span>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full border-2 border-[#F441A5] text-[#F441A5] hover:bg-[#F441A5] hover:text-white transition-all duration-200 text-xs"
+                      >
+                        Xem chi tiết
+                        <ArrowRight className="ml-1 h-3 w-3" />
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </Link>
               </motion.div>
             ))}
           </motion.div>
         )}
 
-        {/* View All Link */}
         <motion.div
           initial="initial"
           whileInView="animate"
@@ -496,7 +503,6 @@ function ArticleSection({
   )
 }
 
-// Activity Categories Section Component
 function ActivityCategoriesSection() {
   return (
     <section id="activities" className="section-wrapper bg-gradient-to-br from-gray-50 to-white scroll-mt-20">
@@ -523,7 +529,7 @@ function ActivityCategoriesSection() {
           viewport={{ once: true, margin: '-50px' }}
           className="grid grid-cols-1 md:grid-cols-3 gap-8 px-2 py-2 overflow-visible"
         >
-          {activityCategories.map((category, index) => {
+          {activityCategories.map((category) => {
             const Icon = category.icon
             return (
               <motion.div
@@ -570,36 +576,43 @@ function ActivityCategoriesSection() {
 }
 
 function BlogPageContent() {
-  const searchParams = useSearchParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<string>('news')
+  const [headerHeight, setHeaderHeight] = useState<string>('104px')
 
   useEffect(() => {
-    const tab = searchParams.get('tab')
-    if (tab === 'events' || tab === 'news') {
+    const updateHeaderHeight = () => {
+      if (typeof window === 'undefined') return
+      const header = document.querySelector('header')
+      if (header) {
+        setHeaderHeight(`${header.offsetHeight}px`)
+      } else {
+        setHeaderHeight(window.innerWidth >= 768 ? '140px' : '104px')
+      }
+    }
+
+    updateHeaderHeight()
+    const handleResize = () => requestAnimationFrame(updateHeaderHeight)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  useEffect(() => {
+    const tab = searchParams?.get('tab')
+    if (tab && (tab === 'news' || tab === 'events')) {
       setActiveTab(tab)
     }
   }, [searchParams])
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab)
-    // Update URL without scrolling
-    const newUrl = `${ROUTES.BLOG}?tab=${tab}`
-    router.push(newUrl, { scroll: false })
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('vi-VN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
+    router.push(`${ROUTES.BLOG}?tab=${tab}`, { scroll: false })
   }
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
-      {/* Breadcrumb */}
-      <div className="bg-gray-50 border-b">
+      <div className="bg-gray-50 border-b" style={{ marginTop: headerHeight }}>
         <div className="container-custom py-4">
           <Breadcrumb
             items={[
@@ -609,17 +622,25 @@ function BlogPageContent() {
         </div>
       </div>
 
-      {/* Hero Section */}
-      <section className="section-wrapper bg-gradient-to-br from-white to-gray-50">
-        <div className="container-custom">
+      <section 
+        className="section-wrapper bg-gradient-to-br from-white to-gray-50 relative overflow-hidden"
+        style={{
+          backgroundImage: 'url(https://images.unsplash.com/photo-1504151932400-72d4384f04b3?q=80&w=2669&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
+      >
+        <div className="absolute inset-0 bg-white/20"></div>
+        <div className="container-custom relative z-10">
           <motion.div
             initial="initial"
             whileInView="animate"
             viewport={{ once: true }}
             variants={fadeInUp}
-            className="text-center mb-12"
+            className="text-center"
           >
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4" style={{ lineHeight: '1.2' }}>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-2" style={{ lineHeight: '1.2' }}>
               TIN TỨC & HOẠT ĐỘNG
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
@@ -629,7 +650,6 @@ function BlogPageContent() {
         </div>
       </section>
 
-      {/* Tabs Section */}
       <section className="section-wrapper bg-white border-b">
         <div className="container-custom">
           <div className="flex items-center justify-center gap-4 mb-8">
@@ -659,7 +679,6 @@ function BlogPageContent() {
         </div>
       </section>
 
-      {/* Tab Content */}
       <AnimatePresence mode="wait">
         {activeTab === 'news' && (
           <motion.div
@@ -695,7 +714,6 @@ function BlogPageContent() {
         )}
       </AnimatePresence>
 
-      {/* Activity Categories Section */}
       <ActivityCategoriesSection />
     </div>
   )

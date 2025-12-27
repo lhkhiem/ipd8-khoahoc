@@ -1,4 +1,6 @@
 export { AboutHero } from './AboutHero'
 export { AboutSection } from './AboutSection'
+export { ThousandDaysSection } from './ThousandDaysSection'
+export { VisionMissionSection } from './VisionMissionSection'
+export { MethodologySection } from './MethodologySection'
 export { FinalCTA } from './FinalCTA'
-

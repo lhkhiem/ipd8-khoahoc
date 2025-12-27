@@ -17,8 +17,8 @@ interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
-  register: (data: { email: string; password: string; name: string; phone?: string }) => Promise<{ success: boolean; error?: string }>
+  login: (phone: string, password: string) => Promise<{ success: boolean; error?: string }>
+  register: (data: { email: string; password: string; name: string; phone: string; location?: string; age?: number }) => Promise<{ success: boolean; error?: string }>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
 }
@@ -49,20 +49,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           role: result.data.role,
         })
       } else {
+        // Silently fail - user is not authenticated or API is unavailable
+        // Don't log errors for failed auth checks as they're expected when not logged in
+        if (result.error && !result.error.includes('Unable to connect')) {
+          // Only log non-connection errors (like 401, 403, etc.)
+          console.warn('[AuthContext] Auth check failed:', result.error)
+        }
         setUser(null)
       }
     } catch (error) {
-      console.error('[AuthContext] Check auth error:', error)
+      // Only log unexpected errors, not network failures
+      if (error instanceof Error && !error.message.includes('Failed to fetch')) {
+        console.error('[AuthContext] Check auth error:', error)
+      }
       setUser(null)
     } finally {
       setIsLoading(false)
     }
   }
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (phone: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       setIsLoading(true)
-      const result = await authApi.login({ email, password })
+      // Login bằng phone, nhưng API có thể vẫn cần email format, tạm thời dùng phone làm identifier
+      const result = await authApi.login({ email: phone, password })
       
       if (result.success && result.data) {
         setUser({
@@ -89,7 +99,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string
     password: string
     name: string
-    phone?: string
+    phone: string
+    location?: string
+    age?: number
   }): Promise<{ success: boolean; error?: string }> => {
     try {
       setIsLoading(true)

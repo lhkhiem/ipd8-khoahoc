@@ -53,9 +53,9 @@ export function PricingCard({ option, index }: PricingCardProps) {
             ))}
           </ul>
           <Button
-            className={`w-full hover:scale-105 transition-all duration-200 mt-auto ${
+            className={`w-full mt-auto ${
               option.popular
-                ? 'bg-gradient-to-r from-[#F441A5] to-[#FF5F6D] text-white hover:opacity-90'
+                ? 'btn-gradient-pink'
                 : 'bg-transparent border-2 border-[#F441A5] text-[#F441A5] hover:bg-[#F441A5] hover:text-white'
             }`}
             size="lg"

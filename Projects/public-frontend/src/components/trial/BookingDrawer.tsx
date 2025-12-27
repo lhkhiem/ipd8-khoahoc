@@ -355,7 +355,7 @@ export function BookingDrawer({ open, onOpenChange, session, onSuccess }: Bookin
                           type="button"
                           onClick={handleSubmit((data) => handlePayment('zalopay', data))}
                           disabled={isSubmitting || !acceptTerms}
-                          className="w-full bg-gradient-to-r from-[#F441A5] to-[#FF5F6D] text-white hover:opacity-90 hover:scale-105 transition-all duration-200"
+                          className="btn-gradient-pink w-full"
                         >
                           {isSubmitting ? (
                             <>
@@ -426,7 +426,7 @@ export function BookingDrawer({ open, onOpenChange, session, onSuccess }: Bookin
                     <div className="space-y-3">
                       <Button
                         onClick={handleClose}
-                        className="w-full bg-gradient-to-r from-[#F441A5] to-[#FF5F6D] text-white hover:opacity-90"
+                        className="btn-gradient-pink w-full"
                       >
                         Về Dashboard
                       </Button>

@@ -10,7 +10,7 @@ import { TimelineItem, TimelineSession } from '@/components/courses/TimelineItem
 import { PricingCard, PricingOption } from '@/components/courses/PricingCard'
 import { ContactForm } from '@/components/courses/ContactForm'
 import { Button } from '@/components/ui/button'
-import { mockCourses } from '@/data/courses'
+import { mockCourses, courseContentMap } from '@/data/courses'
 import { courseSessionsMap, defaultSessions } from '@/data/courseSessions'
 import { ROUTES } from '@/lib/constants'
 import { formatCurrency } from '@/lib/utils'
@@ -112,7 +112,7 @@ export default function CourseDetailPage({
         
         {/* Content */}
         <div className="relative z-10 h-full flex items-center">
-          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="container-custom">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -132,7 +132,7 @@ export default function CourseDetailPage({
 
       {/* Main Title Section */}
       <section className="w-full bg-white pt-20 md:pt-24 lg:pt-28 pb-12 md:pb-16">
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="container-custom">
           <div className="max-w-4xl">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -171,9 +171,47 @@ export default function CourseDetailPage({
         </div>
       </section>
 
+      {/* Course Content Section */}
+      {courseContentMap[course.slug] && (
+        <section className="w-full bg-gray-50 py-20 md:py-24 lg:py-28">
+          <div className="container-custom max-w-4xl">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-100px' }}
+              transition={{ duration: 0.6 }}
+              className="prose prose-lg max-w-none"
+            >
+              <div className="bg-white rounded-2xl shadow-lg p-8 md:p-12">
+                <div className="text-gray-800 whitespace-pre-line leading-relaxed">
+                  {courseContentMap[course.slug].split('\n').map((line, index) => {
+                    // Format special lines (emojis, headings, etc.)
+                    if (line.trim().startsWith('✨') || line.trim().startsWith('🌟') || line.trim().startsWith('💛') || line.trim().startsWith('💗') || line.trim().startsWith('🌱') || line.trim().startsWith('🍼') || line.trim().startsWith('👶') || line.trim().startsWith('🧠') || line.trim().startsWith('📘') || line.trim().startsWith('👉') || line.trim().startsWith('🎥') || line.trim().startsWith('📌') || line.trim().startsWith('🧩') || line.trim().startsWith('👑') || line.trim().startsWith('🤰') || line.trim().startsWith('💦') || line.trim().startsWith('🌸') || line.trim().startsWith('🌷')) {
+                      return (
+                        <p key={index} className="text-lg md:text-xl font-medium text-gray-900 mb-4">
+                          {line}
+                        </p>
+                      )
+                    }
+                    if (line.trim() === '') {
+                      return <br key={index} />
+                    }
+                    return (
+                      <p key={index} className="text-base md:text-lg text-gray-700 mb-3">
+                        {line}
+                      </p>
+                    )
+                  })}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+      )}
+
       {/* Timeline Section */}
       <section className="w-full bg-gray-50 py-20 md:py-24 lg:py-28">
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="container-custom">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -218,7 +256,7 @@ export default function CourseDetailPage({
             <Link href={ROUTES.TRIAL || ROUTES.COURSES}>
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-[#F441A5] to-[#FF5F6D] text-white hover:opacity-90 hover:scale-105 transition-all duration-200 px-8 py-6 text-lg font-semibold"
+                className="btn-gradient-pink px-8 py-6 text-lg font-semibold"
               >
                 Đăng ký ngay
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -238,7 +276,7 @@ export default function CourseDetailPage({
 
       {/* Pricing Options */}
       <section className="w-full bg-white py-20 md:py-24 lg:py-28">
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="container-custom">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}

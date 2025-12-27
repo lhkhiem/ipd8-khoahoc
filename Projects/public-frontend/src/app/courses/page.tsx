@@ -1,157 +1,220 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { CourseHero } from '@/components/courses/CourseHero'
 import { CourseFilter, FilterCategory } from '@/components/courses/CourseFilter'
 import { CourseSection } from '@/components/courses/CourseSection'
+import { PackageSection } from '@/components/packages/PackageSection'
 import { CourseCardData } from '@/components/courses/CourseCard'
 import { ROUTES } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
+import { mockCourses } from '@/data/courses'
+import { allPackages } from '@/data/packages'
+import { formatCurrency } from '@/lib/utils'
 
-// Mock data for course listing
-const allCourses: CourseCardData[] = [
-  // Khóa học thử
-  {
-    id: '1',
-    slug: 'goi-hoc-thu-99k',
-    title: 'GÓI HỌC THỬ 01 BUỔI 99K',
-    description: 'Trải nghiệm một buổi học với giá ưu đãi để hiểu rõ phương pháp giảng dạy của IPD8',
-    image: 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=800&h=600&fit=crop',
-    duration: '1 buổi',
+// Convert Course to CourseCardData
+const convertToCourseCardData = (course: typeof mockCourses[0]): CourseCardData => {
+  const getCategory = (targetAudience: string, price: number): string => {
+    if (price === 0) return 'Miễn phí'
+    if (targetAudience === 'me-bau') return 'Mẹ bầu'
+    if (targetAudience === '0-12-thang') return '0-12 tháng'
+    if (targetAudience === '13-24-thang') return '13-24 tháng'
+    return 'Khóa học'
+  }
+
+  const formatPrice = (price: number): string => {
+    if (price === 0) return 'Miễn phí'
+    return formatCurrency(price)
+  }
+
+  const getDuration = (durationMinutes: number): string => {
+    if (durationMinutes === 0) return 'Truy cập không giới hạn'
+    if (durationMinutes < 60) return `${durationMinutes} phút`
+    if (durationMinutes < 1440) return `${Math.round(durationMinutes / 60)} giờ`
+    return `${Math.round(durationMinutes / 1440)} ngày`
+  }
+
+  return {
+    id: course.id,
+    slug: course.slug,
+    title: course.title,
+    description: course.description,
+    image: course.thumbnailUrl || 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=800&h=600&fit=crop',
+    duration: getDuration(course.durationMinutes),
     instructor: 'Chuyên gia IPD8',
-    benefitsMom: 'Hiểu rõ phương pháp',
-    benefitsBaby: 'Đánh giá phát triển',
-    price: '99.000đ',
-    featured: true,
-    category: 'Học thử'
-  },
-  {
-    id: '2',
-    slug: 'goi-hoc-thu-mien-phi',
-    title: 'GÓI HỌC THỬ MIỄN PHÍ',
-    description: 'Trải nghiệm miễn phí 2 buổi học để làm quen với môi trường học tập',
-    image: 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=800&h=600&fit=crop',
-    duration: '2 buổi',
-    instructor: 'Chuyên gia IPD8',
-    benefitsMom: 'Trải nghiệm chất lượng',
-    benefitsBaby: 'Làm quen môi trường',
-    price: 'Miễn phí',
-    featured: false,
-    category: 'Học thử'
-  },
-  
-  // Khóa học tháng
-  {
-    id: '3',
-    slug: 'goi-03-thang',
-    title: 'GÓI 03 THÁNG',
-    description: 'Chương trình học 3 tháng với hỗ trợ liên tục từ đội ngũ chuyên gia',
-    image: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=800&h=600&fit=crop',
-    duration: '3 tháng',
-    instructor: 'Chuyên gia IPD8',
-    benefitsMom: 'Hỗ trợ liên tục',
-    benefitsBaby: 'Theo dõi tiến độ',
-    price: 'Liên hệ',
-    featured: false,
-    category: 'Gói tháng'
-  },
-  {
-    id: '4',
-    slug: 'goi-06-thang',
-    title: 'GÓI 06 THÁNG',
-    description: 'Chương trình học 6 tháng toàn diện cho mẹ và bé',
-    image: 'https://images.unsplash.com/photo-1476703993599-0035a21b17a9?w=800&h=600&fit=crop',
-    duration: '6 tháng',
-    instructor: 'Chuyên gia IPD8',
-    benefitsMom: 'Đồng hành dài hạn',
-    benefitsBaby: 'Phát triển bền vững',
-    price: 'Liên hệ',
-    featured: true,
-    category: 'Gói tháng'
-  },
-  {
-    id: '5',
-    slug: 'goi-12-thang',
-    title: 'GÓI 12 THÁNG',
-    description: 'Chương trình học 12 tháng với ưu đãi đặc biệt',
-    image: 'https://images.unsplash.com/photo-1445633629932-0029acc44e88?w=800&h=600&fit=crop',
-    duration: '12 tháng',
-    instructor: 'Chuyên gia IPD8',
-    benefitsMom: 'Tiết kiệm tối đa',
-    benefitsBaby: 'Cả năm đồng hành',
-    price: 'Liên hệ',
-    featured: false,
-    category: 'Gói tháng'
-  },
-  
-  // Gói đặc biệt
-  {
-    id: '6',
-    slug: 'combo-me-bau',
-    title: 'COMBO MẸ BẦU',
-    description: 'Gói combo đặc biệt dành cho mẹ bầu từ thai kỳ đến sau sinh',
-    image: 'https://images.unsplash.com/photo-1505028106030-e07ea1bd80c3?w=800&h=600&fit=crop',
-    duration: '9 tháng',
-    instructor: 'Chuyên gia IPD8',
-    benefitsMom: 'Thai kỳ an toàn',
-    benefitsBaby: 'Bé khỏe mạnh',
-    price: 'Liên hệ',
-    featured: true,
-    category: 'Đặc biệt'
-  },
-]
+    benefitsMom: course.benefitsMom || '',
+    benefitsBaby: course.benefitsBaby || '',
+    price: formatPrice(course.price),
+    featured: course.featured,
+    category: getCategory(course.targetAudience, course.price),
+  }
+}
+
+// Convert all courses
+const allCourses: CourseCardData[] = mockCourses.map(convertToCourseCardData)
 
 export default function CoursesPage() {
+  const [headerHeight, setHeaderHeight] = useState<string>('104px')
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('all')
 
+  // Calculate header height
+  useEffect(() => {
+    const updateHeaderHeight = () => {
+      if (typeof window === 'undefined') return
+
+      const header = document.querySelector('header')
+      if (header) {
+        const actualHeight = header.offsetHeight
+        setHeaderHeight(`${actualHeight}px`)
+      } else {
+        setHeaderHeight(window.innerWidth >= 768 ? '140px' : '104px')
+      }
+    }
+
+    updateHeaderHeight()
+
+    const handleResize = () => {
+      requestAnimationFrame(() => {
+        updateHeaderHeight()
+      })
+    }
+
+    window.addEventListener('resize', handleResize)
+    window.addEventListener('orientationchange', handleResize)
+    
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize)
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', updateHeaderHeight)
+    } else {
+      updateHeaderHeight()
+    }
+
+    const timeoutId = setTimeout(updateHeaderHeight, 100)
+
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      window.removeEventListener('orientationchange', handleResize)
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleResize)
+      }
+      document.removeEventListener('DOMContentLoaded', updateHeaderHeight)
+      clearTimeout(timeoutId)
+    }
+  }, [])
+
   // Filter courses based on active filter
-  const filteredCourses = activeFilter === 'all' 
-    ? allCourses 
-    : allCourses.filter(course => {
-        if (activeFilter === 'hoc-thu-99k') return course.category === 'Học thử'
-        if (activeFilter === 'goi-3-6-12-24-thang') return course.category === 'Gói tháng'
-        if (activeFilter === 'combo-6-buoi') return course.category === 'Đặc biệt'
-        // For other filters, match by slug or category
-        if (activeFilter === 'me-bau') return course.slug.includes('me-bau') || course.category === 'Mẹ bầu'
-        if (activeFilter === '0-12-thang') return course.slug.includes('0-12') || course.category === '0-12 tháng'
-        if (activeFilter === '13-24-thang') return course.slug.includes('13-24') || course.category === '13-24 tháng'
+  const filteredCourses = useMemo(() => {
+    if (activeFilter === 'all') return allCourses
+    
+    return allCourses.filter(course => {
+      // Filter by target audience
+      if (activeFilter === 'me-bau') {
+        const courseData = mockCourses.find(c => c.id === course.id)
+        return courseData?.targetAudience === 'me-bau'
+      }
+      
+      if (activeFilter === '0-12-thang') {
+        const courseData = mockCourses.find(c => c.id === course.id)
+        return courseData?.targetAudience === '0-12-thang'
+      }
+      
+      // Filter by price
+      if (activeFilter === 'mien-phi') {
+        return course.price === 'Miễn phí' || course.price === 0
+      }
+      
+      if (activeFilter === 'co-phí') {
+        return course.price !== 'Miễn phí' && course.price !== 0 && course.price !== 'Liên hệ'
+      }
+      
         return true
       })
+  }, [activeFilter, allCourses])
 
-  const trialCourses = filteredCourses.filter(c => c.category === 'Học thử')
-  const monthCourses = filteredCourses.filter(c => c.category === 'Gói tháng')
-  const specialCourses = filteredCourses.filter(c => c.category === 'Đặc biệt')
+  // Group courses by category for display
+  const freeCourses = filteredCourses.filter(c => c.price === 'Miễn phí' || c.price === 0)
+  const paidCourses = filteredCourses.filter(c => c.price !== 'Miễn phí' && c.price !== 0 && c.price !== 'Liên hệ')
+  const featuredCourses = filteredCourses.filter(c => c.featured)
 
   return (
     <>
       {/* Hero Banner */}
-      <CourseHero />
+      <CourseHero marginTop={headerHeight} />
 
       {/* Filter Bar */}
       <CourseFilter activeFilter={activeFilter} onFilterChange={setActiveFilter} />
 
       {/* Course Sections */}
-      {trialCourses.length > 0 && (
+      {activeFilter === 'all' && (
+        <>
+          {featuredCourses.length > 0 && (
+            <CourseSection
+              title="Khóa học nổi bật"
+              subtitle="Các khóa học được yêu thích nhất"
+              courses={featuredCourses}
+            />
+          )}
+          {paidCourses.length > 0 && (
+            <CourseSection
+              title="Khóa học có phí"
+              subtitle="Các khóa học với nội dung chuyên sâu và giá trị cao"
+              courses={paidCourses}
+            />
+          )}
+          {freeCourses.length > 0 && (
+            <CourseSection
+              title="Khóa học miễn phí"
+              subtitle="Truy cập miễn phí các tài liệu và khóa học chất lượng"
+              courses={freeCourses}
+            />
+          )}
+        </>
+      )}
+
+      {activeFilter === 'co-phí' && paidCourses.length > 0 && (
         <CourseSection
-          title="Khóa học thử"
-          subtitle="Trải nghiệm chất lượng với giá ưu đãi"
-          courses={trialCourses}
+          title="Khóa học có phí"
+          subtitle="Các khóa học với nội dung chuyên sâu và giá trị cao"
+          courses={paidCourses}
         />
       )}
 
-      {monthCourses.length > 0 && (
+      {activeFilter === 'mien-phi' && freeCourses.length > 0 && (
         <CourseSection
-          title="Khóa học tháng"
-          subtitle="Chương trình học dài hạn với hỗ trợ liên tục"
-          courses={monthCourses}
+          title="Khóa học miễn phí"
+          subtitle="Truy cập miễn phí các tài liệu và khóa học chất lượng"
+          courses={freeCourses}
         />
       )}
 
-      {specialCourses.length > 0 && (
-        <CourseSection title="Gói đặc biệt" subtitle="Các gói học với ưu đãi đặc biệt" courses={specialCourses} />
+      {(activeFilter === 'me-bau' || activeFilter === '0-12-thang') && filteredCourses.length > 0 && (
+        <CourseSection
+          title={activeFilter === 'me-bau' ? "Dành cho mẹ bầu" : "Dành cho bé 0–12 tháng"}
+          subtitle={activeFilter === 'me-bau' ? "Các khóa học chuyên biệt dành cho mẹ bầu" : "Các khóa học phát triển toàn diện cho bé 0–12 tháng"}
+          courses={filteredCourses}
+        />
       )}
+
+      {filteredCourses.length === 0 && (
+        <section className="section-wrapper bg-white">
+          <div className="container-custom text-center py-20">
+            <p className="text-xl text-gray-600">Không tìm thấy khóa học nào phù hợp với bộ lọc đã chọn.</p>
+          </div>
+        </section>
+      )}
+
+      {/* Packages Section - Slider */}
+      <PackageSection
+        title="Gói học 8i - Giải pháp toàn diện"
+        subtitle="Các gói học được thiết kế chuyên biệt cho từng giai đoạn phát triển của con, giúp mẹ đồng hành trọn vẹn trong 1.000 ngày vàng đầu đời"
+        packages={allPackages}
+        showLargeCard={false}
+      />
 
       {/* CTA Section */}
       <section className="section-wrapper gradient-primary text-white relative">

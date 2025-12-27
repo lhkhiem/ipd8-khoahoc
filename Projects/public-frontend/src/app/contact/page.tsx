@@ -18,12 +18,63 @@ const fadeInUp = {
 
 export default function ContactPage() {
   // Google Maps embed URL - sanitized for security
-  // Công Ty Tnhh Công Đẳng Bình Đẳng
-  const googleMapsUrl = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d31353.39462262783!2d106.67916375499026!3d10.797956718522848!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x317529b15e5c002f%3A0xbda7eafb741d93e2!2zQ8O0bmcgVHkgVG5oaCBDw7TMo25nIMSQw7TMgG5nIELDosyAdQ!5e0!3m2!1sen!2s!4v1765356643102!5m2!1sen!2s'
+  // Vietnam Business Center, 57-59 Hồ Tùng Mậu, Phường Sài Gòn, TP. HCM
+  // TODO: Cần cập nhật URL embed chính xác từ Google Maps
+  // Để lấy URL embed: Vào Google Maps -> Tìm địa chỉ -> Chia sẻ -> Nhúng bản đồ -> Copy URL
+  const googleMapsUrl = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.1234567890123!2d106.70412345678901!3d10.789012345678901!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752f1234567890%3A0x1234567890abcdef!2sVietnam%20Business%20Center!5e0!3m2!1sen!2s!4v1234567890123!5m2!1sen!2s'
   
+  const [headerHeight, setHeaderHeight] = useState<string>('104px')
   const [sanitizedMapUrl, setSanitizedMapUrl] = useState<string | null>(null)
   const [mapError, setMapError] = useState(false)
   const [mapLoaded, setMapLoaded] = useState(false)
+
+  // Calculate header height
+  useEffect(() => {
+    const updateHeaderHeight = () => {
+      if (typeof window === 'undefined') return
+
+      const header = document.querySelector('header')
+      if (header) {
+        const actualHeight = header.offsetHeight
+        setHeaderHeight(`${actualHeight}px`)
+      } else {
+        setHeaderHeight(window.innerWidth >= 768 ? '140px' : '104px')
+      }
+    }
+
+    updateHeaderHeight()
+
+    const handleResize = () => {
+      requestAnimationFrame(() => {
+        updateHeaderHeight()
+      })
+    }
+
+    window.addEventListener('resize', handleResize)
+    window.addEventListener('orientationchange', handleResize)
+    
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize)
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', updateHeaderHeight)
+    } else {
+      updateHeaderHeight()
+    }
+
+    const timeoutId = setTimeout(updateHeaderHeight, 100)
+
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      window.removeEventListener('orientationchange', handleResize)
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleResize)
+      }
+      document.removeEventListener('DOMContentLoaded', updateHeaderHeight)
+      clearTimeout(timeoutId)
+    }
+  }, [])
 
   useEffect(() => {
     // Sanitize Google Maps URL on client side
@@ -47,8 +98,9 @@ export default function ContactPage() {
     <div className="flex flex-col min-h-screen bg-white">
       {/* Hero Section with Parallax */}
       <section 
-        className="relative w-full max-w-full min-h-[400px] sm:min-h-[500px] md:min-h-[600px] overflow-hidden flex items-center justify-center"
+        className="relative w-full max-w-full min-h-[400px] sm:min-h-[500px] md:min-h-[600px] overflow-hidden flex items-center justify-center border-b"
         style={{
+          marginTop: headerHeight,
           backgroundImage: 'url(https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=1920&h=1080&fit=crop&q=80)',
           backgroundAttachment: 'fixed',
           backgroundPosition: 'center',
@@ -95,8 +147,8 @@ export default function ContactPage() {
                 <div>
                   <h3 className="font-semibold mb-2">Địa chỉ</h3>
                   <p className="text-sm text-muted-foreground leading-[1.2]">
-                    <span className="block">123 Nguyễn Huệ, Quận 1</span>
-                    <span className="block mt-[0.2em]">TP. Hồ Chí Minh, Việt Nam</span>
+                    <span className="block">Tầng 8, Tòa nhà Vietnam Business Center</span>
+                    <span className="block mt-[0.2em]">Số 57-59 đường Hồ Tùng Mậu, Phường Sài Gòn, TP. HCM</span>
                   </p>
                 </div>
               </div>
@@ -112,8 +164,7 @@ export default function ContactPage() {
                 <div>
                   <h3 className="font-semibold mb-2">Điện thoại</h3>
                   <p className="text-sm text-muted-foreground leading-[1.2]">
-                    <span className="block">Hotline: +84 123 456 789</span>
-                    <span className="block mt-[0.2em]">Tư vấn: +84 987 654 321</span>
+                    <span className="block">Hotline: +84 94 770 10 10</span>
                   </p>
                 </div>
               </div>
@@ -129,8 +180,7 @@ export default function ContactPage() {
                 <div>
                   <h3 className="font-semibold mb-2">Email</h3>
                   <p className="text-sm text-muted-foreground leading-[1.2]">
-                    <span className="block">contact@ipd8.vn</span>
-                    <span className="block mt-[0.2em]">support@ipd8.vn</span>
+                    <span className="block">contact@ipd8.org</span>
                   </p>
                 </div>
               </div>
@@ -192,7 +242,7 @@ export default function ContactPage() {
                     Không thể tải bản đồ. Vui lòng xem địa chỉ bên dưới.
                   </p>
                   <a
-                    href="https://www.google.com/maps/search/Công+Ty+Tnhh+Công+Đẳng+Bình+Đẳng"
+                    href="https://www.google.com/maps/search/Vietnam+Business+Center+57-59+Hồ+Tùng+Mậu+Phường+Sài+Gòn+TP+HCM"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-[#F441A5] hover:underline"
@@ -228,8 +278,8 @@ export default function ContactPage() {
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-1">Địa chỉ</h3>
                   <p className="text-sm text-gray-600 leading-[1.2]">
-                    <span className="block">123 Nguyễn Huệ, Quận 1</span>
-                    <span className="block mt-[0.2em]">TP. Hồ Chí Minh, Việt Nam</span>
+                    <span className="block">Tầng 8, Tòa nhà Vietnam Business Center</span>
+                    <span className="block mt-[0.2em]">Số 57-59 đường Hồ Tùng Mậu, Phường Sài Gòn, TP. HCM</span>
                   </p>
                 </div>
               </div>
@@ -271,7 +321,7 @@ export default function ContactPage() {
               <Link href={ROUTES.COURSES}>
                 <Button 
                   size="lg" 
-                  className="bg-gradient-to-r from-[#F441A5] to-[#FF5F6D] text-white hover:opacity-90 hover:scale-105 transition-all duration-200 px-8 py-6 text-lg font-semibold"
+                  className="btn-gradient-pink px-8 py-6 text-lg font-semibold"
                 >
                   Xem các khóa học
                   <ArrowRight className="ml-2 h-5 w-5" />

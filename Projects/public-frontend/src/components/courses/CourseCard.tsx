@@ -45,13 +45,14 @@ export function CourseCard({ course, index = 0 }: CourseCardProps) {
       transition={{ delay: index * 0.1, duration: 0.5 }}
       className="overflow-visible w-full max-w-full h-full"
     >
-      <Card className="group bg-white border-2 border-gray-100 rounded-2xl shadow-md overflow-hidden h-full hover:shadow-2xl hover:scale-105 hover:border-[#F441A5] transition-all duration-300 w-full max-w-full">
-        <div className="relative h-48 overflow-hidden w-full">
+      <Card className="group bg-white border-2 border-gray-200 rounded-lg shadow-card overflow-hidden h-full hover:shadow-card-2xl hover:scale-105 hover:-translate-y-2 hover:border-[#F441A5] transition-all duration-300 w-full max-w-full p-0">
+        {/* Image wrapper: luôn rộng bằng card, chiều cao tự co theo tỷ lệ, hiển thị đủ nội dung ảnh */}
+        <div className="relative w-full aspect-[4/3] m-0 p-0 overflow-hidden rounded-t-lg">
           <Image
             src={course.image}
             alt={course.title}
             fill
-            className="object-cover group-hover:scale-110 transition-transform duration-500"
+            className="object-contain transition-transform duration-500 rounded-t-lg"
             sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
           {course.featured && (
@@ -66,10 +67,10 @@ export function CourseCard({ course, index = 0 }: CourseCardProps) {
           )}
         </div>
         <CardContent className="p-4 md:p-6 min-w-0">
-          <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3 line-clamp-2 min-h-[3.5rem] md:min-h-[56px] break-words">
+          <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3 line-clamp-2 min-h-[3.5rem] md:min-h-[49px] break-words">
             {course.title}
           </h3>
-          <p className="text-sm text-gray-600 mb-4 line-clamp-2 min-h-[40px] break-words">
+          <p className="text-sm text-gray-600 mb-4 line-clamp-2 min-h-[35px] break-words">
             {course.description}
           </p>
           

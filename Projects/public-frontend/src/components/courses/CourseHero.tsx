@@ -3,9 +3,13 @@
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 
-export function CourseHero() {
+interface CourseHeroProps {
+  marginTop?: string
+}
+
+export function CourseHero({ marginTop }: CourseHeroProps) {
   return (
-    <section className="relative w-full max-w-full h-[300px] sm:h-[400px] md:h-[500px] overflow-hidden">
+    <section className="relative w-full max-w-full h-[300px] sm:h-[400px] md:h-[500px] overflow-hidden border-b" style={marginTop ? { marginTop } : undefined}>
       <div className="absolute inset-0">
         <Image
           src="https://images.unsplash.com/photo-1566004100631-35d015d6a491?w=1920&h=800&fit=crop"

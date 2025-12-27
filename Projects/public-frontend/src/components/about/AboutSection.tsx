@@ -14,7 +14,7 @@ interface AboutSectionProps {
   index: number
 }
 
-export function AboutSection({
+function AboutSection({
   image,
   imageAlt,
   title,
@@ -24,9 +24,9 @@ export function AboutSection({
   index,
 }: AboutSectionProps) {
   return (
-    <section className="section-wrapper bg-white w-full max-w-full overflow-x-hidden">
-      <div className="container-custom max-w-7xl w-full max-w-full">
-        <div className={`grid lg:grid-cols-2 gap-8 md:gap-12 lg:gap-16 items-center w-full max-w-full ${
+    <section className="section-wrapper bg-white w-full overflow-x-hidden">
+      <div className="container-about">
+        <div className={`grid lg:grid-cols-2 gap-8 md:gap-12 lg:gap-16 items-center ${
           reverse ? 'lg:grid-flow-dense' : ''
         }`}>
           {/* Image */}
@@ -35,7 +35,7 @@ export function AboutSection({
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: '-100px' }}
             transition={{ delay: index * 0.1, duration: 0.6 }}
-            className={`relative h-[300px] sm:h-[400px] md:h-[500px] rounded-2xl overflow-hidden shadow-2xl w-full max-w-full ${
+            className={`relative h-[300px] sm:h-[400px] md:h-[500px] rounded-2xl overflow-hidden shadow-2xl ${
               reverse ? 'lg:col-start-2' : ''
             }`}
           >
@@ -86,3 +86,5 @@ export function AboutSection({
   )
 }
 
+export default AboutSection
+export { AboutSection }

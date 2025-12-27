@@ -584,7 +584,7 @@ export default function DashboardPage() {
                     
                     <Button
                       onClick={handleSaveProfile}
-                      className="w-full bg-gradient-to-r from-[#F441A5] to-[#FF5F6D] text-white hover:opacity-90"
+                      className="btn-gradient-pink w-full"
                     >
                       <Save className="h-4 w-4 mr-2" />
                       LƯU
@@ -721,7 +721,7 @@ export default function DashboardPage() {
                                     </li>
                                   </ul>
                                   <Button
-                                    className="w-full bg-gradient-to-r from-[#F441A5] to-[#FF5F6D] text-white hover:opacity-90 mt-4"
+                                    className="btn-gradient-pink w-full mt-4"
                                     size="sm"
                                     onClick={() => router.push(`/dashboard/courses/${pkg.id}`)}
                                   >
@@ -1383,15 +1383,15 @@ export default function DashboardPage() {
                     <ul className="space-y-2 text-sm text-muted-foreground">
                       <li className="flex items-center gap-2">
                         <MapPin className="h-4 w-4" />
-                        <span>123 Nguyễn Huệ, Quận 1, TP.HCM</span>
+                        <span>Tầng 8, Tòa nhà Vietnam Business Center số 57-59 đường Hồ Tùng Mậu, Phường Sài Gòn, TP. HCM</span>
                       </li>
                       <li className="flex items-center gap-2">
                         <Phone className="h-4 w-4" />
-                        <span>+84 123 456 789</span>
+                        <span>+84 94 770 10 10</span>
                       </li>
                       <li className="flex items-center gap-2">
                         <Mail className="h-4 w-4" />
-                        <span>contact@ipd8.vn</span>
+                        <span>contact@ipd8.org</span>
                       </li>
                     </ul>
                     <div className="mt-4">

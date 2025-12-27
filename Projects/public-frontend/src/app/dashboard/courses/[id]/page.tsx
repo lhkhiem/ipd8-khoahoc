@@ -326,7 +326,7 @@ export default function CourseDetailPage() {
                           onChange={(e) => setReviewText(e.target.value)}
                           className="min-h-[120px]"
                         />
-                        <Button className="bg-gradient-to-r from-[#F441A5] to-[#FF5F6D] text-white">
+                        <Button className="btn-gradient-pink">
                           Gửi đánh giá
                         </Button>
                       </div>
@@ -370,7 +370,7 @@ export default function CourseDetailPage() {
                           </div>
                         ))}
 
-                        <Button className="bg-gradient-to-r from-[#F441A5] to-[#FF5F6D] text-white">
+                        <Button className="btn-gradient-pink">
                           Gửi khảo sát
                         </Button>
 
@@ -494,7 +494,7 @@ export default function CourseDetailPage() {
                             <p className="text-xs text-gray-500 mb-4">
                               *Giá trên chưa bao gồm VAT
                             </p>
-                            <Button className="w-full bg-gradient-to-r from-[#F441A5] to-[#FF5F6D] text-white hover:opacity-90">
+                            <Button className="btn-gradient-pink w-full">
                               Đăng ký ngay
                             </Button>
                           </div>

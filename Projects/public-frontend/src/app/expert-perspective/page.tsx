@@ -24,7 +24,8 @@ const allPosts = [
     category: 'Nhi khoa',
     date: '2025-12-15',
     readTime: '5 phút',
-    tags: ['Phát triển trẻ em', '1.000 ngày đầu đời', 'Sức khỏe']
+    tags: ['Phát triển trẻ em', '1.000 ngày đầu đời', 'Sức khỏe'],
+    slug: 'tam-quan-trong-1000-ngay-dau-doi'
   },
   {
     id: 2,
@@ -37,7 +38,8 @@ const allPosts = [
     category: 'Dinh dưỡng',
     date: '2025-12-12',
     readTime: '7 phút',
-    tags: ['Dinh dưỡng mẹ bầu', 'Thai kỳ', 'Sức khỏe']
+    tags: ['Dinh dưỡng mẹ bầu', 'Thai kỳ', 'Sức khỏe'],
+    slug: 'dinh-duong-dung-cach-me-bau-3-thang-dau'
   },
   {
     id: 3,
@@ -50,7 +52,8 @@ const allPosts = [
     category: 'Giáo dục sớm',
     date: '2025-12-10',
     readTime: '8 phút',
-    tags: ['Montessori', 'Giáo dục sớm', 'Phát triển trẻ em']
+    tags: ['Montessori', 'Giáo dục sớm', 'Phát triển trẻ em'],
+    slug: 'phuong-phap-montessori-0-3-tuoi'
   },
   {
     id: 4,
@@ -63,7 +66,8 @@ const allPosts = [
     category: 'Sản khoa',
     date: '2025-12-08',
     readTime: '6 phút',
-    tags: ['Sau sinh', 'Sức khỏe mẹ', 'Chăm sóc']
+    tags: ['Sau sinh', 'Sức khỏe mẹ', 'Chăm sóc'],
+    slug: 'cham-soc-suc-khoe-me-sau-sinh'
   },
   {
     id: 5,
@@ -76,7 +80,8 @@ const allPosts = [
     category: 'Vận động',
     date: '2025-12-05',
     readTime: '5 phút',
-    tags: ['Vận động', 'Phát triển', 'Trẻ sơ sinh']
+    tags: ['Vận động', 'Phát triển', 'Trẻ sơ sinh'],
+    slug: 'phat-trien-van-dong-tre-so-sinh'
   },
   {
     id: 6,
@@ -89,7 +94,8 @@ const allPosts = [
     category: 'Nhi khoa',
     date: '2025-12-03',
     readTime: '6 phút',
-    tags: ['Sốt', 'Sức khỏe trẻ', 'Chăm sóc']
+    tags: ['Sốt', 'Sức khỏe trẻ', 'Chăm sóc'],
+    slug: 'dau-hieu-va-cach-xu-ly-tre-bi-sot'
   },
   {
     id: 7,
@@ -102,7 +108,8 @@ const allPosts = [
     category: 'Dinh dưỡng',
     date: '2025-12-01',
     readTime: '7 phút',
-    tags: ['Dinh dưỡng', 'Ăn dặm', 'Trẻ em']
+    tags: ['Dinh dưỡng', 'Ăn dặm', 'Trẻ em'],
+    slug: 'thuc-don-dinh-duong-tre-6-12-thang'
   },
   {
     id: 8,
@@ -115,7 +122,8 @@ const allPosts = [
     category: 'Tâm lý',
     date: '2025-11-28',
     readTime: '9 phút',
-    tags: ['Tâm lý', 'Cảm xúc', 'Phát triển']
+    tags: ['Tâm lý', 'Cảm xúc', 'Phát triển'],
+    slug: 'tam-ly-tre-em-hieu-va-dong-hanh'
   },
   {
     id: 9,
@@ -128,7 +136,8 @@ const allPosts = [
     category: 'Sản khoa',
     date: '2025-11-25',
     readTime: '6 phút',
-    tags: ['Sinh con', 'Chuẩn bị', 'Sản khoa']
+    tags: ['Sinh con', 'Chuẩn bị', 'Sản khoa'],
+    slug: 'chuan-bi-tam-ly-vat-chat-sinh-con'
   },
   {
     id: 10,
@@ -141,7 +150,8 @@ const allPosts = [
     category: 'Vận động',
     date: '2025-11-22',
     readTime: '5 phút',
-    tags: ['Vận động', 'Ngoài trời', 'Phát triển']
+    tags: ['Vận động', 'Ngoài trời', 'Phát triển'],
+    slug: 'tam-quan-trong-van-dong-ngoai-troi'
   }
 ]
 
@@ -168,7 +178,56 @@ const postVariants = {
 }
 
 export default function ExpertPerspectivePage() {
+  const [headerHeight, setHeaderHeight] = useState<string>('104px')
   const [displayedPosts, setDisplayedPosts] = useState(allPosts.slice(0, POSTS_PER_PAGE))
+
+  // Calculate header height
+  useEffect(() => {
+    const updateHeaderHeight = () => {
+      if (typeof window === 'undefined') return
+
+      const header = document.querySelector('header')
+      if (header) {
+        const actualHeight = header.offsetHeight
+        setHeaderHeight(`${actualHeight}px`)
+      } else {
+        setHeaderHeight(window.innerWidth >= 768 ? '140px' : '104px')
+      }
+    }
+
+    updateHeaderHeight()
+
+    const handleResize = () => {
+      requestAnimationFrame(() => {
+        updateHeaderHeight()
+      })
+    }
+
+    window.addEventListener('resize', handleResize)
+    window.addEventListener('orientationchange', handleResize)
+    
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize)
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', updateHeaderHeight)
+    } else {
+      updateHeaderHeight()
+    }
+
+    const timeoutId = setTimeout(updateHeaderHeight, 100)
+
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      window.removeEventListener('orientationchange', handleResize)
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleResize)
+      }
+      document.removeEventListener('DOMContentLoaded', updateHeaderHeight)
+      clearTimeout(timeoutId)
+    }
+  }, [])
   const [isLoading, setIsLoading] = useState(false)
   const [hasMore, setHasMore] = useState(allPosts.length > POSTS_PER_PAGE)
   const observerRef = useRef<HTMLDivElement>(null)
@@ -224,7 +283,7 @@ export default function ExpertPerspectivePage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       {/* Breadcrumb */}
-      <div className="bg-white border-b">
+      <div className="bg-white border-b" style={{ marginTop: headerHeight }}>
         <div className="container-custom py-4">
           <Breadcrumb
             items={[
@@ -248,7 +307,7 @@ export default function ExpertPerspectivePage() {
             </Link>
             <Link
               href={ROUTES.EXPERT_PERSPECTIVE}
-              className="px-6 py-3 bg-gradient-to-r from-[#F441A5] to-[#FF5F6D] text-white rounded-lg font-semibold shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+              className="btn-gradient-pink px-6 py-3 rounded-lg font-semibold shadow-md hover:shadow-lg flex items-center gap-2"
             >
               Góc chuyên gia
               <ChevronRight className="h-4 w-4" />
@@ -297,7 +356,8 @@ export default function ExpertPerspectivePage() {
                   layout
                 >
                   <div className="p-2">
-                    <Card className="bg-white border-2 border-gray-200 shadow-lg overflow-hidden group hover:shadow-2xl hover:border-[#F441A5] transition-all duration-300 h-full flex flex-col">
+                    <Link href={`/expert-perspective/${post.slug}`}>
+                      <Card className="bg-white border-2 border-gray-200 shadow-lg overflow-hidden group hover:shadow-2xl hover:border-[#F441A5] transition-all duration-300 h-full flex flex-col cursor-pointer">
                     <div className="relative h-48 overflow-hidden">
                       <Image
                         src={post.image}
@@ -373,6 +433,7 @@ export default function ExpertPerspectivePage() {
                       </Button>
                     </CardContent>
                   </Card>
+                    </Link>
                   </div>
                 </motion.div>
               ))}

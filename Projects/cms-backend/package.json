@@ -13,7 +13,9 @@
     "migrate:faq": "ts-node src/migrations/run-faq-migration.ts",
     "migrate:single": "ts-node src/migrations/run-single.ts",
     "seed": "ts-node src/migrations/seed.ts",
-    "qa": "ts-node src/scripts/qa.ts"
+    "qa": "ts-node src/scripts/qa.ts",
+    "test:course": "ts-node src/tests/test-course-apis.ts",
+    "test:api": "ts-node src/tests/test-api-endpoints.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -34,7 +36,8 @@
     "sequelize": "^6.35.0",
     "sharp": "^0.33.5",
     "uuid": "^9.0.0",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "form-data": "^4.0.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.2",

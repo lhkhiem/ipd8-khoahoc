@@ -6,6 +6,9 @@ import CourseModule from '../models/CourseModule';
 import CourseSession from '../models/CourseSession';
 import Material from '../models/Material';
 import Instructor from '../models/Instructor';
+import path from 'path';
+import fs from 'fs';
+import { MATERIALS_UPLOAD_PATH } from '../utils/multerMaterials';
 
 // List courses
 export const getCourses = async (req: AuthRequest, res: Response) => {
@@ -313,6 +316,398 @@ export const addCourseSession = async (req: AuthRequest, res: Response) => {
   } catch (err) {
     console.error('[addCourseSession] Error:', err);
     res.status(500).json({ error: 'Failed to add session' });
+  }
+};
+
+// Update module
+export const updateCourseModule = async (req: AuthRequest, res: Response) => {
+  try {
+    const actor = req.user as any;
+    if (!actor || (actor.role !== 'admin' && actor.role !== 'instructor')) {
+      return res.status(403).json({ error: 'Insufficient permission' });
+    }
+
+    const { id, moduleId } = req.params;
+    const { title, description, duration_minutes, order } = req.body;
+
+    const module = await CourseModule.findOne({
+      where: {
+        id: moduleId,
+        course_id: id,
+      },
+    });
+
+    if (!module) {
+      return res.status(404).json({ error: 'Module not found' });
+    }
+
+    await module.update({
+      title: title !== undefined ? title : module.title,
+      description: description !== undefined ? description : module.description,
+      duration_minutes: duration_minutes !== undefined ? duration_minutes : module.duration_minutes,
+      order: order !== undefined ? order : module.order,
+    });
+
+    res.json({ data: module });
+  } catch (err) {
+    console.error('[updateCourseModule] Error:', err);
+    res.status(500).json({ error: 'Failed to update module' });
+  }
+};
+
+// Delete module
+export const deleteCourseModule = async (req: AuthRequest, res: Response) => {
+  try {
+    const actor = req.user as any;
+    if (!actor || (actor.role !== 'admin' && actor.role !== 'instructor')) {
+      return res.status(403).json({ error: 'Insufficient permission' });
+    }
+
+    const { id, moduleId } = req.params;
+
+    const module = await CourseModule.findOne({
+      where: {
+        id: moduleId,
+        course_id: id,
+      },
+    });
+
+    if (!module) {
+      return res.status(404).json({ error: 'Module not found' });
+    }
+
+    await module.destroy();
+    res.json({ message: 'Module deleted successfully' });
+  } catch (err) {
+    console.error('[deleteCourseModule] Error:', err);
+    res.status(500).json({ error: 'Failed to delete module' });
+  }
+};
+
+// Reorder modules
+export const reorderCourseModules = async (req: AuthRequest, res: Response) => {
+  try {
+    const actor = req.user as any;
+    if (!actor || (actor.role !== 'admin' && actor.role !== 'instructor')) {
+      return res.status(403).json({ error: 'Insufficient permission' });
+    }
+
+    const { id } = req.params;
+    const { moduleIds } = req.body;
+
+    if (!Array.isArray(moduleIds)) {
+      return res.status(400).json({ error: 'moduleIds must be an array' });
+    }
+
+    // Update order for each module
+    const updatePromises = moduleIds.map((moduleId: string, index: number) => {
+      return CourseModule.update(
+        { order: index },
+        {
+          where: {
+            id: moduleId,
+            course_id: id,
+          },
+        }
+      );
+    });
+
+    await Promise.all(updatePromises);
+
+    // Fetch updated modules
+    const modules = await CourseModule.findAll({
+      where: { course_id: id },
+      order: [['order', 'ASC']],
+    });
+
+    res.json({ data: modules });
+  } catch (err) {
+    console.error('[reorderCourseModules] Error:', err);
+    res.status(500).json({ error: 'Failed to reorder modules' });
+  }
+};
+
+// Update session
+export const updateCourseSession = async (req: AuthRequest, res: Response) => {
+  try {
+    const actor = req.user as any;
+    if (!actor || (actor.role !== 'admin' && actor.role !== 'instructor')) {
+      return res.status(403).json({ error: 'Insufficient permission' });
+    }
+
+    const { id, sessionId } = req.params;
+    const {
+      title,
+      description,
+      start_time,
+      end_time,
+      location,
+      capacity,
+      instructor_id,
+      meeting_link,
+      meeting_type,
+      order,
+    } = req.body;
+
+    const session = await CourseSession.findOne({
+      where: {
+        id: sessionId,
+        course_id: id,
+      },
+    });
+
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    await session.update({
+      title: title !== undefined ? title : session.title,
+      description: description !== undefined ? description : session.description,
+      start_time: start_time !== undefined ? start_time : session.start_time,
+      end_time: end_time !== undefined ? end_time : session.end_time,
+      location: location !== undefined ? location : session.location,
+      capacity: capacity !== undefined ? capacity : session.capacity,
+      instructor_id: instructor_id !== undefined ? instructor_id : session.instructor_id,
+      meeting_link: meeting_link !== undefined ? meeting_link : session.meeting_link,
+      meeting_type: meeting_type !== undefined ? meeting_type : session.meeting_type,
+      order: order !== undefined ? order : session.order,
+    });
+
+    res.json({ data: session });
+  } catch (err) {
+    console.error('[updateCourseSession] Error:', err);
+    res.status(500).json({ error: 'Failed to update session' });
+  }
+};
+
+// Delete session
+export const deleteCourseSession = async (req: AuthRequest, res: Response) => {
+  try {
+    const actor = req.user as any;
+    if (!actor || (actor.role !== 'admin' && actor.role !== 'instructor')) {
+      return res.status(403).json({ error: 'Insufficient permission' });
+    }
+
+    const { id, sessionId } = req.params;
+
+    const session = await CourseSession.findOne({
+      where: {
+        id: sessionId,
+        course_id: id,
+      },
+    });
+
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    // Check if session has registrations (optional - can be implemented later)
+    // const registrations = await SessionRegistration.count({ where: { session_id: sessionId } });
+    // if (registrations > 0) {
+    //   return res.status(400).json({ error: 'Cannot delete session with existing registrations' });
+    // }
+
+    await session.destroy();
+    res.json({ message: 'Session deleted successfully' });
+  } catch (err) {
+    console.error('[deleteCourseSession] Error:', err);
+    res.status(500).json({ error: 'Failed to delete session' });
+  }
+};
+
+// Update session status
+export const updateCourseSessionStatus = async (req: AuthRequest, res: Response) => {
+  try {
+    const actor = req.user as any;
+    if (!actor || (actor.role !== 'admin' && actor.role !== 'instructor')) {
+      return res.status(403).json({ error: 'Insufficient permission' });
+    }
+
+    const { id, sessionId } = req.params;
+    const { status } = req.body;
+
+    if (!status || !['scheduled', 'full', 'cancelled', 'done'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status. Must be: scheduled, full, cancelled, or done' });
+    }
+
+    const session = await CourseSession.findOne({
+      where: {
+        id: sessionId,
+        course_id: id,
+      },
+    });
+
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    await session.update({ status });
+    res.json({ data: session });
+  } catch (err) {
+    console.error('[updateCourseSessionStatus] Error:', err);
+    res.status(500).json({ error: 'Failed to update session status' });
+  }
+};
+
+// Add material to course
+export const addCourseMaterial = async (req: AuthRequest, res: Response) => {
+  try {
+    const actor = req.user as any;
+    if (!actor || (actor.role !== 'admin' && actor.role !== 'instructor')) {
+      return res.status(403).json({ error: 'Insufficient permission' });
+    }
+
+    const { id } = req.params;
+    const file = (req as any).file as Express.Multer.File;
+    const { title, visibility, provider } = req.body;
+
+    if (!file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    if (!title) {
+      // Delete uploaded file if title is missing
+      if (fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+      }
+      return res.status(400).json({ error: 'Missing required field: title' });
+    }
+
+    // Verify course exists
+    const course = await Course.findByPk(id);
+    if (!course) {
+      // Delete uploaded file if course doesn't exist
+      if (fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+      }
+      return res.status(404).json({ error: 'Course not found' });
+    }
+
+    // Generate file URL (relative to shared-storage)
+    const fileKey = path.relative(MATERIALS_UPLOAD_PATH, file.path);
+    const fileUrl = `/uploads/materials/${fileKey}`;
+
+    const material = await Material.create({
+      course_id: id,
+      title,
+      file_key: fileKey,
+      file_url: fileUrl,
+      mime_type: file.mimetype,
+      size: file.size,
+      visibility: visibility || 'enrolled',
+      provider: provider || 'local',
+      download_count: 0,
+    });
+
+    res.status(201).json({ data: material });
+  } catch (err) {
+    console.error('[addCourseMaterial] Error:', err);
+    // Clean up uploaded file on error
+    const file = (req as any).file;
+    if (file && fs.existsSync(file.path)) {
+      fs.unlinkSync(file.path);
+    }
+    res.status(500).json({ error: 'Failed to add material' });
+  }
+};
+
+// Update material
+export const updateCourseMaterial = async (req: AuthRequest, res: Response) => {
+  try {
+    const actor = req.user as any;
+    if (!actor || (actor.role !== 'admin' && actor.role !== 'instructor')) {
+      return res.status(403).json({ error: 'Insufficient permission' });
+    }
+
+    const { id, materialId } = req.params;
+    const { title, visibility } = req.body;
+    const file = (req as any).file as Express.Multer.File;
+
+    const material = await Material.findOne({
+      where: {
+        id: materialId,
+        course_id: id,
+      },
+    });
+
+    if (!material) {
+      // Delete uploaded file if material doesn't exist
+      if (file && fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+      }
+      return res.status(404).json({ error: 'Material not found' });
+    }
+
+    // If new file is uploaded, delete old file and update
+    if (file) {
+      const oldFilePath = path.join(MATERIALS_UPLOAD_PATH, material.file_key);
+      if (fs.existsSync(oldFilePath)) {
+        fs.unlinkSync(oldFilePath);
+      }
+
+      const fileKey = path.relative(MATERIALS_UPLOAD_PATH, file.path);
+      const fileUrl = `/uploads/materials/${fileKey}`;
+
+      await material.update({
+        title: title !== undefined ? title : material.title,
+        visibility: visibility !== undefined ? visibility : material.visibility,
+        file_key: fileKey,
+        file_url: fileUrl,
+        mime_type: file.mimetype,
+        size: file.size,
+      });
+    } else {
+      // Only update title and visibility if no new file
+      await material.update({
+        title: title !== undefined ? title : material.title,
+        visibility: visibility !== undefined ? visibility : material.visibility,
+      });
+    }
+
+    res.json({ data: material });
+  } catch (err) {
+    console.error('[updateCourseMaterial] Error:', err);
+    const file = (req as any).file;
+    if (file && fs.existsSync(file.path)) {
+      fs.unlinkSync(file.path);
+    }
+    res.status(500).json({ error: 'Failed to update material' });
+  }
+};
+
+// Delete material
+export const deleteCourseMaterial = async (req: AuthRequest, res: Response) => {
+  try {
+    const actor = req.user as any;
+    if (!actor || (actor.role !== 'admin' && actor.role !== 'instructor')) {
+      return res.status(403).json({ error: 'Insufficient permission' });
+    }
+
+    const { id, materialId } = req.params;
+
+    const material = await Material.findOne({
+      where: {
+        id: materialId,
+        course_id: id,
+      },
+    });
+
+    if (!material) {
+      return res.status(404).json({ error: 'Material not found' });
+    }
+
+    // Delete file from storage
+    const filePath = path.join(MATERIALS_UPLOAD_PATH, material.file_key);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    // Delete database record
+    await material.destroy();
+    res.json({ message: 'Material deleted successfully' });
+  } catch (err) {
+    console.error('[deleteCourseMaterial] Error:', err);
+    res.status(500).json({ error: 'Failed to delete material' });
   }
 };
 

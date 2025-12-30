@@ -131,8 +131,9 @@ export const authApi = {
 
   /**
    * Login user
+   * Support login by email or phone
    */
-  login: async (data: { email: string; password: string }) => {
+  login: async (data: { email?: string; phone?: string; password: string }) => {
     return apiRequest<{
       token: string;
       user: {

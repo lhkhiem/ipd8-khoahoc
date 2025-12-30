@@ -68,11 +68,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const login = async (phone: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (emailOrPhone: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       setIsLoading(true)
-      // Login bằng phone, nhưng API có thể vẫn cần email format, tạm thời dùng phone làm identifier
-      const result = await authApi.login({ email: phone, password })
+      // Determine if input is email or phone
+      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailOrPhone)
+      // Send to API with appropriate field
+      const result = isEmail 
+        ? await authApi.login({ email: emailOrPhone, password })
+        : await authApi.login({ phone: emailOrPhone, password })
       
       if (result.success && result.data) {
         setUser({

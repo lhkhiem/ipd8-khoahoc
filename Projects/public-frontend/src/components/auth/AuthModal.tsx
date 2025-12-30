@@ -24,7 +24,7 @@ interface AuthModalProps {
 
 export function AuthModal({ open, onOpenChange, initialMode = 'login' }: AuthModalProps) {
   const [mode, setMode] = useState<'login' | 'register'>(initialMode)
-  const [phone, setPhone] = useState('')
+  const [emailOrPhone, setEmailOrPhone] = useState('')
   const [password, setPassword] = useState('')
   const [formData, setFormData] = useState({
     name: '',
@@ -43,7 +43,7 @@ export function AuthModal({ open, onOpenChange, initialMode = 'login' }: AuthMod
   // Reset form when modal opens/closes or mode changes
   useEffect(() => {
     if (!open) {
-      setPhone('')
+      setEmailOrPhone('')
       setPassword('')
       setFormData({
         name: '',
@@ -68,20 +68,22 @@ export function AuthModal({ open, onOpenChange, initialMode = 'login' }: AuthMod
     e.preventDefault()
     setError('')
     
-    if (!phone || !password) {
-      setError('Vui lòng nhập đầy đủ số điện thoại và mật khẩu')
+    if (!emailOrPhone || !password) {
+      setError('Vui lòng nhập đầy đủ email/số điện thoại và mật khẩu')
       return
     }
 
-    // Validate phone format (Vietnamese phone: 10 digits, starting with 0)
+    // Validate format: email hoặc phone
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailOrPhone)
     const phoneRegex = /^(0[3|5|7|8|9])+([0-9]{8})$/
-    if (!phoneRegex.test(phone)) {
-      setError('Số điện thoại không hợp lệ. Vui lòng nhập số điện thoại 10 chữ số bắt đầu bằng 0')
+    
+    if (!isEmail && !phoneRegex.test(emailOrPhone)) {
+      setError('Vui lòng nhập email hợp lệ hoặc số điện thoại 10 chữ số bắt đầu bằng 0')
       return
     }
 
     setIsLoading(true)
-    const result = await login(phone, password)
+    const result = await login(emailOrPhone, password)
     setIsLoading(false)
 
     if (result.success) {
@@ -189,17 +191,17 @@ export function AuthModal({ open, onOpenChange, initialMode = 'login' }: AuthMod
         {mode === 'login' ? (
           <form onSubmit={handleLogin} className="space-y-5 mt-4">
             <div>
-              <Label htmlFor="phone" className="text-sm font-semibold mb-2 block">
-                Số điện thoại <span className="text-red-500">*</span>
+              <Label htmlFor="emailOrPhone" className="text-sm font-semibold mb-2 block">
+                Email hoặc Số điện thoại <span className="text-red-500">*</span>
               </Label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="0901234567"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  id="emailOrPhone"
+                  type="text"
+                  placeholder="email@example.com hoặc 0901234567"
+                  value={emailOrPhone}
+                  onChange={(e) => setEmailOrPhone(e.target.value)}
                   className="pl-10 border-2 focus:border-[#F441A5]"
                   required
                 />

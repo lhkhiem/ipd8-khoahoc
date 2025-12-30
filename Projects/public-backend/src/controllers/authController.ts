@@ -106,26 +106,40 @@ export const register = async (req: AuthRequest, res: Response) => {
 /**
  * Login user
  * POST /api/public/auth/login
- * Body: { email, password }
+ * Body: { email, password } hoặc { phone, password }
+ * Support login bằng email hoặc phone
  */
 export const login = async (req: AuthRequest, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const { email, phone, password } = req.body;
 
     // Validate input
-    if (!email || !password) {
+    if (!password) {
       return res.status(400).json({
         success: false,
-        error: 'Email and password are required',
+        error: 'Password is required',
       });
     }
 
-    // Find user
-    const user = await User.findOne({ where: { email } });
+    if (!email && !phone) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email or phone is required',
+      });
+    }
+
+    // Find user by email or phone
+    let user;
+    if (email) {
+      user = await User.findOne({ where: { email } });
+    } else if (phone) {
+      user = await User.findOne({ where: { phone } });
+    }
+
     if (!user) {
       return res.status(401).json({
         success: false,
-        error: 'Invalid email or password',
+        error: 'Invalid email/phone or password',
       });
     }
 

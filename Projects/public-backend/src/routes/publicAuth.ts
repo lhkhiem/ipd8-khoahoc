@@ -29,13 +29,36 @@ router.post(
 /**
  * POST /api/public/auth/login
  * Login user
- * Body: { email, password }
+ * Body: { email, password } hoặc { phone, password }
+ * Support login bằng email hoặc phone
  */
 router.post(
   '/login',
   authRateLimiter,
-  validateRequired(['email', 'password']),
-  validateEmail,
+  // Custom validation: require email OR phone, and password
+  (req, res, next) => {
+    const { email, phone, password } = req.body;
+    if (!password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Password is required',
+      });
+    }
+    if (!email && !phone) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email or phone is required',
+      });
+    }
+    // Validate email format nếu có email
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid email format',
+      });
+    }
+    next();
+  },
   asyncHandler(authController.login)
 );
 

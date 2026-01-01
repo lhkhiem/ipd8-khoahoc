@@ -303,7 +303,7 @@ export default function HomePage() {
             className="text-center mb-1 md:mb-1.5 lg:mb-2 relative z-10 w-full flex flex-col items-center justify-center"
           >
             <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-0.5 md:mb-1 lg:mb-1 leading-tight break-words px-2">
-              TRUNG TÂM 1.000 NGÀY VÒNG ĐẦU ĐỜI
+              TRUNG TÂM 1.000 NGÀY VÀNG ĐẦU ĐỜI
             </h1>
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-1.5 md:mb-2 lg:mb-2.5 leading-tight break-words px-2">
               <span className="text-yellow-300">VIỆT NAM - NEW ZEALAND IPD8</span>
@@ -474,7 +474,7 @@ export default function HomePage() {
               </h2>
               <div className="space-y-4 text-lg text-gray-700 leading-relaxed">
                 <p>
-                  Trung tâm 1.000 ngày vòng đầu đời Việt Nam - New Zealand IPD8 được thành lập ngày 16/04/2025, 
+                  Trung tâm 1.000 ngày vàng đầu đời Việt Nam - New Zealand IPD8 được thành lập ngày 16/04/2025, 
                   là đơn vị tiên phong trong lĩnh vực giáo dục và chăm sóc sức khỏe cho mẹ và bé.
                 </p>
                 <p>

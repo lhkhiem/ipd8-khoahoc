@@ -236,7 +236,7 @@ export function BookingDrawer({ open, onOpenChange, session, onSuccess }: Bookin
                           id="name"
                           {...register('name')}
                           placeholder="Nhập họ và tên"
-                          className="mt-2 border-2 focus:border-[#F441A5]"
+                          className="mt-2 border-2 focus:border-[#F441A5] focus-visible:ring-0 focus-visible:ring-offset-0"
                         />
                         {errors.name && (
                           <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>
@@ -254,7 +254,7 @@ export function BookingDrawer({ open, onOpenChange, session, onSuccess }: Bookin
                             id="phone"
                             {...register('phone')}
                             placeholder="0901234567"
-                            className="pl-10 border-2 focus:border-[#F441A5]"
+                            className="pl-10 border-2 focus:border-[#F441A5] focus-visible:ring-0 focus-visible:ring-offset-0"
                           />
                         </div>
                         {errors.phone && (
@@ -274,7 +274,7 @@ export function BookingDrawer({ open, onOpenChange, session, onSuccess }: Bookin
                             type="email"
                             {...register('email')}
                             placeholder="email@example.com"
-                            className="pl-10 border-2 focus:border-[#F441A5]"
+                            className="pl-10 border-2 focus:border-[#F441A5] focus-visible:ring-0 focus-visible:ring-offset-0"
                           />
                         </div>
                         {errors.email && (
@@ -293,7 +293,7 @@ export function BookingDrawer({ open, onOpenChange, session, onSuccess }: Bookin
                             id="message"
                             {...register('message')}
                             placeholder="Chia sẻ thêm về nhu cầu của bạn..."
-                            className="pl-10 border-2 focus:border-[#F441A5] min-h-[100px]"
+                            className="pl-10 border-2 focus:border-[#F441A5] focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[100px]"
                           />
                         </div>
                       </div>

@@ -1,6 +1,6 @@
 # TÀI LIỆU THIẾT KẾ HỆ THỐNG IPD8
 
-Thư mục này chứa các tài liệu thiết kế hệ thống cho dự án IPD8 - Trung tâm 1.000 ngày vòng đầu đời.
+Thư mục này chứa các tài liệu thiết kế hệ thống cho dự án IPD8 - Trung tâm 1.000 ngày vàng đầu đời.
 
 ## 📚 Danh sách tài liệu
 

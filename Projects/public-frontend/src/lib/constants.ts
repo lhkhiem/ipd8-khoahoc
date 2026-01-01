@@ -1,4 +1,4 @@
-export const SITE_NAME = 'IPD8 - Trung tâm 1.000 ngày vòng đầu đời'
+export const SITE_NAME = 'IPD8 - Trung tâm 1.000 ngày vàng đầu đời'
 export const SITE_DESCRIPTION = 'Đồng hành cùng mẹ và bé từ thai kỳ đến 02 tuổi'
 
 export const ROUTES = {

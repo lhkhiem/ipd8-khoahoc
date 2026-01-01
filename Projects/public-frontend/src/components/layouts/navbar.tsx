@@ -111,8 +111,12 @@ export function Navbar() {
   }, [])
 
   const handleBackClick = () => {
-    // TODO: Implement back functionality
-    console.log('Back button clicked')
+    // Navigate back in browser history, or go to home if no history
+    if (window.history.length > 1) {
+      router.back()
+    } else {
+      router.push(ROUTES.HOME)
+    }
   }
 
   const handleLanguageToggle = () => {
@@ -228,14 +232,16 @@ export function Navbar() {
         <nav className="container-custom flex h-16 md:h-20 items-center justify-between w-full min-w-0 gap-2 md:gap-4">
           {/* Left: Back Button + Logo */}
           <div className="flex items-center gap-2 md:gap-3 shrink-0">
-            {/* Back Button - TODO: Implement functionality */}
-            <button
-              onClick={handleBackClick}
-              className="hidden md:flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100 transition-colors"
-              aria-label="Quay lại"
-            >
-              <ArrowLeft className="h-5 w-5 text-gray-700" />
-            </button>
+            {/* Back Button - Hidden on home page and dashboard */}
+            {pathname !== ROUTES.HOME && !pathname.startsWith('/dashboard') && (
+              <button
+                onClick={handleBackClick}
+                className="hidden md:flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100 transition-colors"
+                aria-label="Quay lại"
+              >
+                <ArrowLeft className="h-5 w-5 text-gray-700" />
+              </button>
+            )}
             
             {/* Logo */}
             <Link href={ROUTES.HOME} className="flex items-center shrink-0">

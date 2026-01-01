@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Mail, Lock, User, Phone, ArrowRight, X, MapPin, Calendar } from 'lucide-react'
+import { Mail, Lock, User, Phone, ArrowRight, X, MapPin, Calendar, Baby } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { vietnamProvinces } from '@/data/vietnam-provinces'
 
@@ -26,6 +26,7 @@ export function AuthModal({ open, onOpenChange, initialMode = 'login' }: AuthMod
   const [mode, setMode] = useState<'login' | 'register'>(initialMode)
   const [emailOrPhone, setEmailOrPhone] = useState('')
   const [password, setPassword] = useState('')
+  const [motherType, setMotherType] = useState<'pregnant' | 'mom' | ''>('')
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -33,7 +34,9 @@ export function AuthModal({ open, onOpenChange, initialMode = 'login' }: AuthMod
     confirmPassword: '',
     phone: '',
     location: '',
-    age: '',
+    dueDate: '', // Ngày dự sinh (cho mẹ bầu)
+    childAge: '', // Tuổi con (cho mẹ bỉm) - tính bằng tháng
+    age: '', // Giữ lại để tương thích với API
   })
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -45,6 +48,7 @@ export function AuthModal({ open, onOpenChange, initialMode = 'login' }: AuthMod
     if (!open) {
       setEmailOrPhone('')
       setPassword('')
+      setMotherType('')
       setFormData({
         name: '',
         email: '',
@@ -52,12 +56,40 @@ export function AuthModal({ open, onOpenChange, initialMode = 'login' }: AuthMod
         confirmPassword: '',
         phone: '',
         location: '',
+        dueDate: '',
+        childAge: '',
         age: '',
       })
       setError('')
       setIsLoading(false)
     }
   }, [open])
+
+  // Tính tuần thai từ ngày dự sinh
+  // Thai kỳ chuẩn: 40 tuần (280 ngày) từ LMP đến EDD
+  // Tuần thai hiện tại = (hôm nay - (EDD - 280 ngày)) / 7
+  const calculatePregnancyWeeks = (dueDate: string): number | null => {
+    if (!dueDate) return null
+    const due = new Date(dueDate)
+    const today = new Date()
+    
+    // Reset time to start of day for accurate calculation
+    today.setHours(0, 0, 0, 0)
+    due.setHours(0, 0, 0, 0)
+    
+    // Thai kỳ chuẩn là 280 ngày (40 tuần)
+    const standardPregnancyDays = 280
+    const lmpDate = new Date(due.getTime() - (standardPregnancyDays * 24 * 60 * 60 * 1000))
+    
+    // Tính số ngày từ LMP đến hôm nay
+    const daysSinceLMP = Math.floor((today.getTime() - lmpDate.getTime()) / (1000 * 60 * 60 * 24))
+    const currentWeek = Math.floor(daysSinceLMP / 7)
+    
+    // Tuần thai hợp lệ từ 0-42 tuần
+    if (currentWeek < 0) return 0
+    if (currentWeek > 42) return 42
+    return currentWeek
+  }
 
   useEffect(() => {
     setMode(initialMode)
@@ -142,9 +174,34 @@ export function AuthModal({ open, onOpenChange, initialMode = 'login' }: AuthMod
       return 'Mật khẩu xác nhận không khớp'
     }
 
-    // Validate age if provided (must be a positive number)
-    if (formData.age && (isNaN(Number(formData.age)) || Number(formData.age) < 0)) {
-      return 'Tuổi thai/Tuổi con phải là số dương'
+    // Validate mother type and related fields
+    if (!motherType) {
+      return 'Vui lòng chọn bạn là Mẹ bầu hay Mẹ bỉm'
+    }
+    
+    if (motherType === 'pregnant') {
+      if (!formData.dueDate) {
+        return 'Vui lòng nhập ngày dự sinh'
+      }
+      const dueDate = new Date(formData.dueDate)
+      if (isNaN(dueDate.getTime())) {
+        return 'Ngày dự sinh không hợp lệ'
+      }
+      const weeks = calculatePregnancyWeeks(formData.dueDate)
+      if (weeks === null || weeks < 0) {
+        return 'Ngày dự sinh không hợp lệ. Vui lòng kiểm tra lại.'
+      }
+      if (weeks > 42) {
+        return 'Ngày dự sinh không hợp lệ (quá sớm)'
+      }
+    } else if (motherType === 'mom') {
+      if (!formData.childAge) {
+        return 'Vui lòng nhập tuổi của con'
+      }
+      const age = Number(formData.childAge)
+      if (isNaN(age) || age < 0 || age > 120) {
+        return 'Tuổi con phải là số từ 0 đến 120 tháng'
+      }
     }
 
     return null
@@ -161,17 +218,38 @@ export function AuthModal({ open, onOpenChange, initialMode = 'login' }: AuthMod
     }
 
     setIsLoading(true)
+    
+    // Tính toán age dựa trên motherType
+    let ageValue: number | undefined = undefined
+    if (motherType === 'pregnant' && formData.dueDate) {
+      const weeks = calculatePregnancyWeeks(formData.dueDate)
+      if (weeks !== null) {
+        // Chuyển tuần thành tháng để tương thích với API (1 tháng ≈ 4.33 tuần)
+        ageValue = Math.round(weeks / 4.33)
+      }
+    } else if (motherType === 'mom' && formData.childAge) {
+      ageValue = Number(formData.childAge)
+    }
+    
     const result = await register({
       name: formData.name,
       email: formData.email,
       password: formData.password,
       phone: formData.phone,
       location: formData.location || undefined,
-      age: formData.age ? Number(formData.age) : undefined,
+      age: ageValue,
     })
     setIsLoading(false)
 
     if (result.success) {
+      // Save registration info to localStorage
+      if (motherType === 'pregnant' && formData.dueDate) {
+        localStorage.setItem('userDueDate', formData.dueDate)
+        localStorage.setItem('userMotherType', 'pregnant')
+      } else if (motherType === 'mom' && formData.childAge) {
+        localStorage.setItem('userChildAge', formData.childAge)
+        localStorage.setItem('userMotherType', 'mom')
+      }
       onOpenChange(false)
       router.push('/dashboard')
     } else {
@@ -202,7 +280,7 @@ export function AuthModal({ open, onOpenChange, initialMode = 'login' }: AuthMod
                   placeholder="email@example.com hoặc 0901234567"
                   value={emailOrPhone}
                   onChange={(e) => setEmailOrPhone(e.target.value)}
-                  className="pl-10 border-2 focus:border-[#F441A5]"
+                  className="pl-10 border-2 focus:border-[#F441A5] focus-visible:ring-0 focus-visible:ring-offset-0"
                   required
                 />
               </div>
@@ -220,7 +298,7 @@ export function AuthModal({ open, onOpenChange, initialMode = 'login' }: AuthMod
                   placeholder="Nhập mật khẩu"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 border-2 focus:border-[#F441A5]"
+                  className="pl-10 border-2 focus:border-[#F441A5] focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
               </div>
             </div>
@@ -283,7 +361,7 @@ export function AuthModal({ open, onOpenChange, initialMode = 'login' }: AuthMod
                   placeholder="Nguyễn Văn A"
                   value={formData.name}
                   onChange={handleChange}
-                  className="pl-10 border-2 focus:border-[#F441A5]"
+                  className="pl-10 border-2 focus:border-[#F441A5] focus-visible:ring-0 focus-visible:ring-offset-0"
                   required
                 />
               </div>
@@ -302,7 +380,7 @@ export function AuthModal({ open, onOpenChange, initialMode = 'login' }: AuthMod
                   placeholder="email@example.com"
                   value={formData.email}
                   onChange={handleChange}
-                  className="pl-10 border-2 focus:border-[#F441A5]"
+                  className="pl-10 border-2 focus:border-[#F441A5] focus-visible:ring-0 focus-visible:ring-offset-0"
                   required
                 />
               </div>
@@ -321,7 +399,7 @@ export function AuthModal({ open, onOpenChange, initialMode = 'login' }: AuthMod
                   placeholder="0901234567"
                   value={formData.phone}
                   onChange={handleChange}
-                  className="pl-10 border-2 focus:border-[#F441A5]"
+                  className="pl-10 border-2 focus:border-[#F441A5] focus-visible:ring-0 focus-visible:ring-offset-0"
                   required
                 />
               </div>
@@ -335,10 +413,10 @@ export function AuthModal({ open, onOpenChange, initialMode = 'login' }: AuthMod
                 value={formData.location}
                 onValueChange={(value) => handleSelectChange('location', value)}
               >
-                <SelectTrigger className="border-2 focus:border-[#F441A5]">
+                <SelectTrigger className="border-2 focus:border-[#F441A5] focus:ring-0 focus:ring-offset-0">
                   <SelectValue placeholder="Chọn tỉnh/thành phố" />
                 </SelectTrigger>
-                <SelectContent className="max-h-[300px]">
+                <SelectContent className="z-[120] max-h-[300px]">
                   {vietnamProvinces.map((province) => (
                     <SelectItem key={province} value={province}>
                       {province}
@@ -349,23 +427,81 @@ export function AuthModal({ open, onOpenChange, initialMode = 'login' }: AuthMod
             </div>
 
             <div>
-              <Label htmlFor="age" className="text-sm font-semibold mb-2 block">
-                Tuổi thai/Tuổi con (tháng)
+              <Label htmlFor="motherType" className="text-sm font-semibold mb-2 block">
+                Bạn là <span className="text-red-500">*</span>
               </Label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <Input
-                  id="age"
-                  name="age"
-                  type="number"
-                  placeholder="Ví dụ: 6 (tháng)"
-                  value={formData.age}
-                  onChange={handleChange}
-                  className="pl-10 border-2 focus:border-[#F441A5]"
-                  min="0"
-                />
-              </div>
-            </div>
+              <div className="flex gap-3 items-start">
+                <div className="flex-1">
+                  <Select
+                    value={motherType}
+                    onValueChange={(value) => {
+                      setMotherType(value as 'pregnant' | 'mom' | '')
+                      // Reset related fields when changing type
+                      setFormData({
+                        ...formData,
+                        dueDate: '',
+                        childAge: '',
+                      })
+                    }}
+                  >
+                    <SelectTrigger className="border-2 focus:border-[#F441A5] focus:ring-0 focus:ring-offset-0">
+                      <SelectValue placeholder="Chọn loại" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[120]">
+                      <SelectItem value="pregnant">Mẹ bầu</SelectItem>
+                      <SelectItem value="mom">Mẹ bỉm</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                 {motherType === 'pregnant' && (
+                   <div className="flex-1">
+                     <div className="relative">
+                       <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 z-10 pointer-events-none" />
+                       <Input
+                         id="dueDate"
+                         name="dueDate"
+                         type="date"
+                         value={formData.dueDate}
+                         onChange={handleChange}
+                         className="pr-10 border-2 focus:border-[#F441A5] focus-visible:ring-0 focus-visible:ring-offset-0 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-moz-calendar-picker-indicator]:hidden"
+                         style={{
+                           colorScheme: 'light',
+                         }}
+                         required
+                       />
+                     </div>
+                     {formData.dueDate && (
+                       <p className="text-xs text-gray-500 mt-1 text-right">
+                         Tuần thai: {calculatePregnancyWeeks(formData.dueDate) !== null 
+                           ? `${calculatePregnancyWeeks(formData.dueDate)} tuần` 
+                           : 'Đang tính...'}
+                       </p>
+                     )}
+                   </div>
+                 )}
+
+                {motherType === 'mom' && (
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Baby className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 z-10" />
+                      <Input
+                        id="childAge"
+                        name="childAge"
+                        type="number"
+                        placeholder="Tuổi con (tháng)"
+                        value={formData.childAge}
+                        onChange={handleChange}
+                        className="pl-10 border-2 focus:border-[#F441A5] focus-visible:ring-0 focus-visible:ring-offset-0"
+                        min="0"
+                        max="120"
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
+               </div>
+             </div>
 
             <div>
               <Label htmlFor="reg-password" className="text-sm font-semibold mb-2 block">
@@ -380,7 +516,7 @@ export function AuthModal({ open, onOpenChange, initialMode = 'login' }: AuthMod
                   placeholder="Tối thiểu 8 ký tự (chữ, số, ký tự đặc biệt)"
                   value={formData.password}
                   onChange={handleChange}
-                  className="pl-10 border-2 focus:border-[#F441A5]"
+                  className="pl-10 border-2 focus:border-[#F441A5] focus-visible:ring-0 focus-visible:ring-offset-0"
                   required
                   minLength={8}
                 />
@@ -400,7 +536,7 @@ export function AuthModal({ open, onOpenChange, initialMode = 'login' }: AuthMod
                   placeholder="Nhập lại mật khẩu"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="pl-10 border-2 focus:border-[#F441A5]"
+                  className="pl-10 border-2 focus:border-[#F441A5] focus-visible:ring-0 focus-visible:ring-offset-0"
                   required
                   minLength={8}
                 />

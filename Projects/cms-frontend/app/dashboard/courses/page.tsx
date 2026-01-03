@@ -57,6 +57,15 @@ export default function CoursesPage() {
     course.slug.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const getTargetAudienceLabel = (targetAudience: string): string => {
+    const labels: Record<string, string> = {
+      'pregnant-women': 'Phụ nữ mang thai',
+      'new-moms': 'Mẹ mới sinh',
+      'parents': 'Phụ huynh',
+    };
+    return labels[targetAudience] || targetAudience;
+  };
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -151,7 +160,7 @@ export default function CoursesPage() {
                   )}
                 </div>
                 <p className="mb-2 text-sm text-muted-foreground">
-                  {course.target_audience}
+                  {getTargetAudienceLabel(course.target_audience)}
                 </p>
                 <div className="mb-4 flex items-center justify-between">
                   <span className="text-lg font-bold text-card-foreground">

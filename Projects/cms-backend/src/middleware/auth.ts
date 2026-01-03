@@ -40,9 +40,26 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
       const u = await User.findByPk(decoded.id, { attributes: ['role'] });
       role = (u as any)?.role;
     }
+    // Always fetch role from DB to ensure it's current
+    if (decoded.id) {
+      const u = await User.findByPk(decoded.id, { attributes: ['role', 'email', 'id'] });
+      if (u) {
+        role = (u as any)?.role;
+      }
+    }
     req.user = { id: decoded.id, email: decoded.email, role };
+    
+    // Debug logging
+    console.log('[authMiddleware] User authenticated:', {
+      id: req.user.id,
+      email: req.user.email,
+      role: req.user.role,
+      path: req.path,
+    });
+    
     next();
   } catch (error) {
+    console.error('[authMiddleware] Token verification failed:', error);
     return res.status(401).json({ error: 'Invalid token' });
   }
 };

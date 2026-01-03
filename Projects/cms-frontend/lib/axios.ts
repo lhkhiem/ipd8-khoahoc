@@ -42,11 +42,23 @@ if (process.env.NODE_ENV === 'development') {
     (error) => {
       if (error.response?.status === 401) {
         console.log('[Axios] 401 Unauthorized - No valid session');
+      } else if (error.response?.status === 403) {
+        const errorData = error.response?.data || {};
+        console.error('[Axios] 403 Forbidden:', {
+          status: error.response?.status,
+          data: errorData,
+          url: error.config?.url,
+          message: errorData.error || 'Forbidden',
+          userRole: errorData.userRole || 'unknown',
+          requiredRoles: errorData.requiredRoles || [],
+          fullError: error,
+        });
       } else if (error.response?.status !== 401 && error.response?.status !== 429) {
         console.error('[Axios] Response error:', {
           status: error.response?.status,
           data: error.response?.data,
           url: error.config?.url,
+          message: error.message,
         });
       }
       return Promise.reject(error);

@@ -156,7 +156,8 @@ export default function TinyMCEEditor({
         tinymceScriptSrc={TINYMCE_SCRIPT_SRC}
         onInit={(_, editor) => {
           editorRef.current = editor;
-          console.log(`[TinyMCE] Editor initialized: ${editorId}`, editor);
+          // Only log editorId to avoid Next.js 16 params enumeration error
+          console.log(`[TinyMCE] Editor initialized: ${editorId}`);
           // Force toolbar to render and fix width
           setTimeout(() => {
             if (editor && editor.ui) {

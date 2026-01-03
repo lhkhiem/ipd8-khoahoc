@@ -10,6 +10,15 @@ import path from 'path';
 import fs from 'fs';
 import { MATERIALS_UPLOAD_PATH } from '../utils/multerMaterials';
 
+// Helper function to check if user has permission to manage courses
+// Note: User model only supports 'guest', 'student', 'instructor', 'admin'
+// So we only check for 'admin' and 'instructor' (owner is not a valid role in DB)
+const canManageCourses = (actor: any): boolean => {
+  if (!actor || !actor.role) return false;
+  // Allow admin and instructor to manage courses
+  return actor.role === 'admin' || actor.role === 'instructor';
+};
+
 // List courses
 export const getCourses = async (req: AuthRequest, res: Response) => {
   try {
@@ -87,8 +96,30 @@ export const getCourseById = async (req: AuthRequest, res: Response) => {
 export const createCourse = async (req: AuthRequest, res: Response) => {
   try {
     const actor = req.user as any;
-    if (!actor || (actor.role !== 'admin' && actor.role !== 'instructor')) {
-      return res.status(403).json({ error: 'Insufficient permission' });
+    
+    // Debug logging
+    console.log('[createCourse] Actor:', {
+      id: actor?.id,
+      email: actor?.email,
+      role: actor?.role,
+      hasActor: !!actor,
+    });
+    
+    // Allow admin and instructor to create courses
+    // Note: 'owner' role doesn't exist in User model, only 'admin', 'instructor', 'student', 'guest'
+    if (!canManageCourses(actor)) {
+      console.error('[createCourse] Permission denied:', {
+        actorRole: actor?.role,
+        actorId: actor?.id,
+        actorEmail: actor?.email,
+        hasActor: !!actor,
+        allowedRoles: ['admin', 'instructor'],
+      });
+      return res.status(403).json({ 
+        error: 'Insufficient permission. Only admin or instructor can create courses.',
+        userRole: actor?.role || 'none',
+        requiredRoles: ['admin', 'instructor'],
+      });
     }
 
     const {
@@ -152,8 +183,9 @@ export const createCourse = async (req: AuthRequest, res: Response) => {
 export const updateCourse = async (req: AuthRequest, res: Response) => {
   try {
     const actor = req.user as any;
-    if (!actor || (actor.role !== 'admin' && actor.role !== 'instructor')) {
-      return res.status(403).json({ error: 'Insufficient permission' });
+    // Allow owner, admin, and instructor to update courses
+    if (!canManageCourses(actor)) {
+      return res.status(403).json({ error: 'Insufficient permission. Only owner, admin, or instructor can update courses.' });
     }
 
     const { id } = req.params;
@@ -244,7 +276,7 @@ export const getCourseMaterials = async (req: AuthRequest, res: Response) => {
 export const addCourseModule = async (req: AuthRequest, res: Response) => {
   try {
     const actor = req.user as any;
-    if (!actor || (actor.role !== 'admin' && actor.role !== 'instructor')) {
+    if (!canManageCourses(actor)) {
       return res.status(403).json({ error: 'Insufficient permission' });
     }
 
@@ -274,7 +306,7 @@ export const addCourseModule = async (req: AuthRequest, res: Response) => {
 export const addCourseSession = async (req: AuthRequest, res: Response) => {
   try {
     const actor = req.user as any;
-    if (!actor || (actor.role !== 'admin' && actor.role !== 'instructor')) {
+    if (!canManageCourses(actor)) {
       return res.status(403).json({ error: 'Insufficient permission' });
     }
 
@@ -323,7 +355,7 @@ export const addCourseSession = async (req: AuthRequest, res: Response) => {
 export const updateCourseModule = async (req: AuthRequest, res: Response) => {
   try {
     const actor = req.user as any;
-    if (!actor || (actor.role !== 'admin' && actor.role !== 'instructor')) {
+    if (!canManageCourses(actor)) {
       return res.status(403).json({ error: 'Insufficient permission' });
     }
 
@@ -359,7 +391,7 @@ export const updateCourseModule = async (req: AuthRequest, res: Response) => {
 export const deleteCourseModule = async (req: AuthRequest, res: Response) => {
   try {
     const actor = req.user as any;
-    if (!actor || (actor.role !== 'admin' && actor.role !== 'instructor')) {
+    if (!canManageCourses(actor)) {
       return res.status(403).json({ error: 'Insufficient permission' });
     }
 
@@ -388,7 +420,7 @@ export const deleteCourseModule = async (req: AuthRequest, res: Response) => {
 export const reorderCourseModules = async (req: AuthRequest, res: Response) => {
   try {
     const actor = req.user as any;
-    if (!actor || (actor.role !== 'admin' && actor.role !== 'instructor')) {
+    if (!canManageCourses(actor)) {
       return res.status(403).json({ error: 'Insufficient permission' });
     }
 
@@ -431,7 +463,7 @@ export const reorderCourseModules = async (req: AuthRequest, res: Response) => {
 export const updateCourseSession = async (req: AuthRequest, res: Response) => {
   try {
     const actor = req.user as any;
-    if (!actor || (actor.role !== 'admin' && actor.role !== 'instructor')) {
+    if (!canManageCourses(actor)) {
       return res.status(403).json({ error: 'Insufficient permission' });
     }
 
@@ -484,7 +516,7 @@ export const updateCourseSession = async (req: AuthRequest, res: Response) => {
 export const deleteCourseSession = async (req: AuthRequest, res: Response) => {
   try {
     const actor = req.user as any;
-    if (!actor || (actor.role !== 'admin' && actor.role !== 'instructor')) {
+    if (!canManageCourses(actor)) {
       return res.status(403).json({ error: 'Insufficient permission' });
     }
 
@@ -519,7 +551,7 @@ export const deleteCourseSession = async (req: AuthRequest, res: Response) => {
 export const updateCourseSessionStatus = async (req: AuthRequest, res: Response) => {
   try {
     const actor = req.user as any;
-    if (!actor || (actor.role !== 'admin' && actor.role !== 'instructor')) {
+    if (!canManageCourses(actor)) {
       return res.status(403).json({ error: 'Insufficient permission' });
     }
 
@@ -553,7 +585,7 @@ export const updateCourseSessionStatus = async (req: AuthRequest, res: Response)
 export const addCourseMaterial = async (req: AuthRequest, res: Response) => {
   try {
     const actor = req.user as any;
-    if (!actor || (actor.role !== 'admin' && actor.role !== 'instructor')) {
+    if (!canManageCourses(actor)) {
       return res.status(403).json({ error: 'Insufficient permission' });
     }
 
@@ -615,7 +647,7 @@ export const addCourseMaterial = async (req: AuthRequest, res: Response) => {
 export const updateCourseMaterial = async (req: AuthRequest, res: Response) => {
   try {
     const actor = req.user as any;
-    if (!actor || (actor.role !== 'admin' && actor.role !== 'instructor')) {
+    if (!canManageCourses(actor)) {
       return res.status(403).json({ error: 'Insufficient permission' });
     }
 
@@ -679,7 +711,7 @@ export const updateCourseMaterial = async (req: AuthRequest, res: Response) => {
 export const deleteCourseMaterial = async (req: AuthRequest, res: Response) => {
   try {
     const actor = req.user as any;
-    if (!actor || (actor.role !== 'admin' && actor.role !== 'instructor')) {
+    if (!canManageCourses(actor)) {
       return res.status(403).json({ error: 'Insufficient permission' });
     }
 

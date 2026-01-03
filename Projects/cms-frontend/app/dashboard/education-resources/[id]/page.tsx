@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save } from 'lucide-react';
@@ -9,7 +9,6 @@ import { buildApiUrl, buildBackendUrl, getAssetUrl } from '@/lib/api';
 import MediaPicker from '@/components/MediaPicker';
 import { generateSlug } from '@/lib/slug';
 import { Image as ImageIcon, X } from 'lucide-react';
-import { useMemo } from 'react';
 
 export default function EditEducationResourcePage() {
   const params = useParams();

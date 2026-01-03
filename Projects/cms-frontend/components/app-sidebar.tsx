@@ -389,10 +389,11 @@ export function AppSidebar() {
         </nav>
 
         {/* Footer */}
-        {!isCollapsed && (
+        {!isCollapsed && process.env.NEXT_PUBLIC_COMPANY_NAME && (
           <div className="border-t border-sidebar-border p-4">
             <div className="text-xs text-sidebar-foreground/50 text-center">
-              {process.env.NEXT_PUBLIC_COMPANY_NAME ? `Được phát hành bởi <span className="font-semibold">${process.env.NEXT_PUBLIC_COMPANY_NAME}</span>` : ''}
+              Được phát hành bởi{' '}
+              <span className="font-semibold">{process.env.NEXT_PUBLIC_COMPANY_NAME}</span>
             </div>
           </div>
         )}

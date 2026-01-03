@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save } from 'lucide-react';
 import { toast } from 'sonner';
-import axios from 'axios';
+import axios from '@/lib/axios';
 import { buildApiUrl } from '@/lib/api';
 import { generateSlug } from '@/lib/slug';
 import MediaPicker from '@/components/MediaPicker';
 import RichTextEditor from '@/components/RichTextEditor';
+import { useAuthStore } from '@/store/authStore';
 
 interface Instructor {
   id: string;
@@ -19,6 +20,7 @@ interface Instructor {
 
 export default function NewCoursePage() {
   const router = useRouter();
+  const { user } = useAuthStore();
   const [saving, setSaving] = useState(false);
   
   // Basic Info
@@ -133,9 +135,22 @@ export default function NewCoursePage() {
         seo_description: seoDescription || null,
       };
 
-      const response = await axios.post(buildApiUrl('/api/courses'), payload, {
-        withCredentials: true,
+      // Debug: Log user info before request
+      console.log('[NewCoursePage] Creating course with user:', {
+        userId: user?.id,
+        userEmail: user?.email,
+        userRole: user?.role,
+        hasUser: !!user,
       });
+
+      // Check if user has permission
+      if (!user || (user.role !== 'admin' && user.role !== 'instructor')) {
+        toast.error(`Bạn không có quyền tạo khóa học. Yêu cầu role: admin hoặc instructor. Role hiện tại: ${user?.role || 'none'}`);
+        setSaving(false);
+        return;
+      }
+
+      const response = await axios.post(buildApiUrl('/api/courses'), payload);
 
       if (response.status === 201) {
         toast.success('Khóa học đã được tạo thành công');
@@ -143,9 +158,28 @@ export default function NewCoursePage() {
         router.push(`/dashboard/courses/${courseId}`);
       }
     } catch (error: any) {
-      console.error('Failed to create course:', error);
-      const errorMessage = error.response?.data?.error || error.message || 'Không thể tạo khóa học';
-      toast.error(errorMessage);
+      console.error('[NewCoursePage] Failed to create course:', {
+        error,
+        response: error.response,
+        status: error.response?.status,
+        data: error.response?.data,
+        userRole: user?.role,
+        userId: user?.id,
+      });
+      
+      // Show detailed error message
+      if (error.response?.status === 403) {
+        const errorData = error.response?.data || {};
+        const userRole = errorData.userRole || user?.role || 'none';
+        const requiredRoles = errorData.requiredRoles || ['admin', 'instructor'];
+        toast.error(
+          `Không có quyền tạo khóa học. Role hiện tại: ${userRole}. Yêu cầu: ${requiredRoles.join(' hoặc ')}`,
+          { duration: 5000 }
+        );
+      } else {
+        const errorMessage = error.response?.data?.error || error.message || 'Không thể tạo khóa học';
+        toast.error(errorMessage);
+      }
     } finally {
       setSaving(false);
     }

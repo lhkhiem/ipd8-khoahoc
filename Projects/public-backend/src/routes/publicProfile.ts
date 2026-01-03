@@ -7,6 +7,7 @@
 import { Router } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
 import { authMiddleware } from '../middleware/auth';
+import { uploadAvatar } from '../middleware/upload';
 import * as profileController from '../controllers/profileController';
 
 const router = Router();
@@ -51,6 +52,7 @@ router.post(
 router.post(
   '/avatar',
   authMiddleware,
+  uploadAvatar.single('avatar'), // 'avatar' is the field name in form-data
   asyncHandler(profileController.uploadAvatar)
 );
 

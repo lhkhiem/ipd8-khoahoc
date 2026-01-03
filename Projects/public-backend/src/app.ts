@@ -84,6 +84,50 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cookieParser());
 
+// Serve static files (avatars, uploads) from shared-storage
+import path from 'path';
+import fs from 'fs';
+
+// Get backend root directory (where .env.local is located)
+const getBackendRoot = (): string => {
+  // Backend root is 2 levels up from src/app.ts
+  return path.resolve(__dirname, '..');
+};
+
+const getUploadDir = (): string => {
+  let uploadPath: string;
+  const backendRoot = getBackendRoot();
+  
+  // Check if STORAGE_UPLOADS_PATH is set and is a valid path (not a template variable)
+  const storageUploadsPath = process.env.STORAGE_UPLOADS_PATH;
+  if (storageUploadsPath && !storageUploadsPath.includes('${') && !storageUploadsPath.includes('$SHARED')) {
+    uploadPath = path.isAbsolute(storageUploadsPath)
+      ? storageUploadsPath
+      : path.resolve(backendRoot, storageUploadsPath);
+  } else if (process.env.SHARED_STORAGE_PATH) {
+    const sharedPath = path.isAbsolute(process.env.SHARED_STORAGE_PATH)
+      ? process.env.SHARED_STORAGE_PATH
+      : path.resolve(backendRoot, process.env.SHARED_STORAGE_PATH);
+    uploadPath = path.join(sharedPath, 'uploads');
+  } else {
+    uploadPath = path.join(backendRoot, 'uploads');
+  }
+  
+  return uploadPath;
+};
+
+const uploadDir = getUploadDir();
+if (fs.existsSync(uploadDir)) {
+  app.use('/uploads', express.static(uploadDir));
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[Static Files] Serving uploads from: ${uploadDir}`);
+  }
+} else {
+  console.warn(`[Static Files] Upload directory not found: ${uploadDir}`);
+  console.warn(`[Static Files] Backend root: ${getBackendRoot()}`);
+  console.warn(`[Static Files] SHARED_STORAGE_PATH: ${process.env.SHARED_STORAGE_PATH}`);
+}
+
 // Request logging (early, to log all requests)
 app.use(requestLogger);
 
@@ -108,6 +152,7 @@ import publicInstructorsRoutes from './routes/publicInstructors';
 import publicEnrollmentsRoutes from './routes/publicEnrollments';
 import publicPaymentsRoutes from './routes/publicPayments';
 import publicProfileRoutes from './routes/publicProfile';
+import publicUserProfileRoutes from './routes/publicUserProfile';
 
 // Public API routes
 app.use('/api/public/auth', publicAuthRoutes);
@@ -116,6 +161,7 @@ app.use('/api/public/instructors', publicInstructorsRoutes);
 app.use('/api/public/enrollments', publicEnrollmentsRoutes);
 app.use('/api/public/payments', publicPaymentsRoutes);
 app.use('/api/public/profile', publicProfileRoutes);
+app.use('/api/public/users/me', publicUserProfileRoutes);
 
 // 404 handler (must be before error handler)
 app.use(notFoundHandler);

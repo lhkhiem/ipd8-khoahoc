@@ -10,15 +10,22 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    // Only redirect if auth check is complete and user is not authenticated
+    if (!isLoading && !isAuthenticated) {
       router.push(ROUTES.LOGIN)
     }
-  }, [isAuthenticated, router])
+  }, [isAuthenticated, isLoading, router])
 
+  // Show nothing while checking authentication
+  if (isLoading) {
+    return null
+  }
+
+  // Show nothing if not authenticated (will redirect)
   if (!isAuthenticated) {
     return null
   }

@@ -1,10 +1,34 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Rewrite /uploads to backend API for static files
+  async rewrites() {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3101/api';
+    const backendBase = apiUrl.replace('/api', '');
+    
+    return [
+      {
+        source: '/uploads/:path*',
+        destination: `${backendBase}/uploads/:path*`,
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {
         protocol: 'https',
         hostname: '**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3101',
+        pathname: '/uploads/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '127.0.0.1',
+        port: '3101',
+        pathname: '/uploads/**',
       },
     ],
   },
@@ -49,12 +73,11 @@ const nextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.youtube.com https://www.googletagmanager.com https://maps.googleapis.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "img-src 'self' data: https: blob:",
+              "img-src 'self' data: https: blob: http:",
               "font-src 'self' https://fonts.gstatic.com data:",
               // Allow localhost API connections in development
-              process.env.NODE_ENV === 'development'
-                ? "connect-src 'self' http://localhost:* http://127.0.0.1:* https://www.youtube.com https://meet.google.com https://zoom.us https://maps.googleapis.com https://maps.gstatic.com"
-                : "connect-src 'self' https://www.youtube.com https://meet.google.com https://zoom.us https://maps.googleapis.com https://maps.gstatic.com",
+              // Always allow localhost for development (Next.js dev server)
+              "connect-src 'self' http://localhost:3101 http://127.0.0.1:3101 http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:* wss://localhost:* wss://127.0.0.1:* https://www.youtube.com https://meet.google.com https://zoom.us https://maps.googleapis.com https://maps.gstatic.com",
               "frame-src 'self' https://www.youtube.com https://meet.google.com https://zoom.us https://www.google.com https://maps.google.com https://drive.google.com",
               "object-src 'none'",
               "base-uri 'self'",

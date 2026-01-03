@@ -57,18 +57,24 @@ export function Navbar() {
   const [currentLang, setCurrentLang] = useState<'vi' | 'en'>('vi')
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login')
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isLoading } = useAuth()
 
   // Check for auth query parameter and open modal
   useEffect(() => {
     const authParam = searchParams.get('auth')
     if (authParam === 'login' || authParam === 'register') {
-      setAuthModalMode(authParam)
-      setAuthModalOpen(true)
-      // Remove query parameter from URL
-      router.replace(pathname, { scroll: false })
+      // Wait for auth check to complete before deciding to open modal
+      if (!isLoading) {
+        // Only open auth modal if user is not authenticated
+        if (!isAuthenticated) {
+          setAuthModalMode(authParam)
+          setAuthModalOpen(true)
+        }
+        // Always remove query parameter from URL (whether authenticated or not)
+        router.replace(pathname, { scroll: false })
+      }
     }
-  }, [searchParams, router, pathname])
+  }, [searchParams, router, pathname, isAuthenticated, isLoading])
   
   // Mock notification data - in real app, this would come from a context or API
   const mockNotifications = [

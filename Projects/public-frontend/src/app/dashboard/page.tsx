@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -63,6 +63,8 @@ import {
 import { ROUTES } from '@/lib/constants'
 import { formatCurrency } from '@/lib/utils'
 import { safeWindowOpen } from '@/lib/security'
+import { userProfileApi, enrollmentApi, coursesApi, getAllUserSessions, paymentApi, profileApi } from '@/lib/api'
+import { normalizeAvatarUrl, getFullAvatarUrl } from '@/lib/imageUtils'
 
 interface MenuItem {
   id: string
@@ -91,16 +93,17 @@ interface ScheduleSession {
   id: string
   title: string
   course: string
+  course_id?: string
   date: string
   time: string
   endTime?: string
   duration: string
   instructor: string
-  location: string
+  location?: string
   capacity: number
   enrolled: number
   type: 'group' | 'one-on-one'
-  status: 'upcoming' | 'ongoing' | 'completed' | 'full'
+  status: 'upcoming' | 'ongoing' | 'completed' | 'full' | 'cancelled'
   meetingLink?: string
   meetingType?: 'google-meet' | 'zoom'
 }
@@ -928,7 +931,7 @@ const mockDocuments = [
 ]
 
 export default function DashboardPage() {
-  const { user, logout } = useAuth()
+  const { user, logout, refreshUser } = useAuth()
   const router = useRouter()
   const [activeMenu, setActiveMenu] = useState('packages')
   const [currentMonth, setCurrentMonth] = useState(new Date(2025, 9, 1)) // October 2025
@@ -938,7 +941,7 @@ export default function DashboardPage() {
   
   // Schedule filter states
   const [selectedPackage, setSelectedPackage] = useState('all')
-  const [selectedMonth, setSelectedMonth] = useState('10')
+  const [selectedMonth, setSelectedMonth] = useState((new Date().getMonth() + 1).toString())
   const [expandedPackages, setExpandedPackages] = useState<Set<string>>(new Set())
   
   // Profile form state
@@ -949,7 +952,8 @@ export default function DashboardPage() {
     address: 'xxx xxx xxx xxx xxx xx',
     gender: '',
     birthDate: '**/**/1988',
-    avatar: null as File | null
+    avatar: null as File | null,
+    avatarUrl: user?.avatarUrl || null as string | null
   })
   
   // Children and pregnancy info state
@@ -965,45 +969,226 @@ export default function DashboardPage() {
   const [pregnancyWeeks, setPregnancyWeeks] = useState<number | null>(null)
   const [showAddChildForm, setShowAddChildForm] = useState(false)
   const [newChild, setNewChild] = useState({ name: '', birthDate: '' })
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true)
+  const [activePregnancyId, setActivePregnancyId] = useState<string | null>(null)
+  const [isInitialLoad, setIsInitialLoad] = useState(true) // Flag để phân biệt load data vs user action
   
-  // Load registration info from localStorage on mount
+  // Progress tab state
+  const [enrollments, setEnrollments] = useState<CourseProgress[]>([])
+  const [isLoadingProgress, setIsLoadingProgress] = useState(false)
+  
+  // Schedule tab state
+  const [userSessions, setUserSessions] = useState<ScheduleSession[]>([])
+  const [isLoadingSessions, setIsLoadingSessions] = useState(false)
+  
+  // Payment tab state
+  const [orders, setOrders] = useState<any[]>([])
+  const [isLoadingPayments, setIsLoadingPayments] = useState(false)
+  
+  // Load profile data from API on mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedDueDate = localStorage.getItem('userDueDate')
-      const savedMotherType = localStorage.getItem('userMotherType')
-      const savedChildAge = localStorage.getItem('userChildAge')
-      
-      // Load dueDate if exists
-      if (savedDueDate) {
-        setDueDate(savedDueDate)
-      }
-      
-      // If registered as mom with child age, create initial child
-      if (savedMotherType === 'mom' && savedChildAge && children.length === 0) {
-        const childAgeMonths = parseInt(savedChildAge)
-        const today = new Date()
-        const birthDate = new Date(today.getFullYear(), today.getMonth() - childAgeMonths, today.getDate())
-        const ageText = childAgeMonths < 12 
-          ? `${childAgeMonths} tháng` 
-          : `${Math.floor(childAgeMonths / 12)} tuổi ${childAgeMonths % 12} tháng`
-        
-        const initialChild: ChildInfo = {
-          id: 'initial-child',
-          name: 'Con của bạn',
-          birthDate: birthDate.toISOString().split('T')[0],
-          age: ageText
-        }
-        setChildren([initialChild])
-      }
-    }
+    loadProfileData()
+    loadUserProfile()
   }, [])
-  
-  // Save dueDate to localStorage when changed
-  useEffect(() => {
-    if (dueDate && typeof window !== 'undefined') {
-      localStorage.setItem('userDueDate', dueDate)
+
+  // Load user profile data (name, email, phone, address, gender, dob, avatar)
+  const loadUserProfile = async () => {
+    try {
+      const result = await profileApi.getProfile()
+      if (result.success && result.data) {
+        const userData = result.data
+        // Format dob từ YYYY-MM-DD sang DD/MM/YYYY nếu có
+        let birthDate = '**/**/1988'
+        if (userData.dob) {
+          const date = new Date(userData.dob)
+          if (!isNaN(date.getTime())) {
+            const day = String(date.getDate()).padStart(2, '0')
+            const month = String(date.getMonth() + 1).padStart(2, '0')
+            const year = date.getFullYear()
+            birthDate = `${day}/${month}/${year}`
+          }
+        }
+
+        setProfileData({
+          username: userData.name || 'xxx xxx',
+          email: userData.email || 'xxx xxxx@gmail.com',
+          phone: userData.phone || '*******39',
+          address: userData.address || 'xxx xxx xxx xxx xxx xx',
+          gender: userData.gender || '',
+          birthDate: birthDate,
+          avatar: null,
+          avatarUrl: normalizeAvatarUrl(userData.avatar_url) || null,
+        })
+      }
+    } catch (error) {
+      console.error('Error loading user profile:', error)
     }
-  }, [dueDate])
+  }
+  
+  // Load progress data when activeMenu is 'progress'
+  useEffect(() => {
+    if (activeMenu === 'progress') {
+      loadProgressData()
+    }
+  }, [activeMenu])
+  
+  // Load sessions data when activeMenu is 'schedule'
+  useEffect(() => {
+    if (activeMenu === 'schedule') {
+      loadSessionsData()
+    }
+  }, [activeMenu])
+  
+  // Load payments data when activeMenu is 'payment'
+  useEffect(() => {
+    if (activeMenu === 'payment') {
+      loadPaymentsData()
+    }
+  }, [activeMenu])
+  
+  const loadPaymentsData = async () => {
+    try {
+      setIsLoadingPayments(true)
+      const ordersResult = await paymentApi.getMyOrders()
+      if (ordersResult.success && ordersResult.data) {
+        setOrders(ordersResult.data)
+      } else {
+        setOrders([])
+      }
+    } catch (error) {
+      console.error('Error loading payments:', error)
+      setOrders([])
+    } finally {
+      setIsLoadingPayments(false)
+    }
+  }
+  
+  const loadSessionsData = async () => {
+    try {
+      setIsLoadingSessions(true)
+      const sessions = await getAllUserSessions()
+      setUserSessions(sessions)
+    } catch (error) {
+      console.error('Error loading sessions:', error)
+      setUserSessions([])
+    } finally {
+      setIsLoadingSessions(false)
+    }
+  }
+  
+  const loadProgressData = async () => {
+    try {
+      setIsLoadingProgress(true)
+      
+      // Get enrollments
+      const enrollmentsResult = await enrollmentApi.getMyEnrollments()
+      if (!enrollmentsResult.success || !enrollmentsResult.data) {
+        setEnrollments([])
+        return
+      }
+      
+      // Load progress for each enrollment
+      const progressData: CourseProgress[] = []
+      
+      for (const enrollment of enrollmentsResult.data) {
+        if (!enrollment.course) continue
+        
+        // Get enrollment progress
+        const progressResult = await enrollmentApi.getEnrollmentProgress(enrollment.id)
+        
+        // Get course sessions to count total sessions
+        const sessionsResult = await coursesApi.getCourseSessions(enrollment.course_id)
+        
+        const totalSessions = sessionsResult.success && sessionsResult.data ? sessionsResult.data.length : 0
+        const completedSessions = progressResult.success && progressResult.data 
+          ? progressResult.data.progresses.filter((p: any) => p.status === 'completed').length 
+          : 0
+        
+        // Get last activity from progresses
+        const lastActivity = progressResult.success && progressResult.data && progressResult.data.progresses.length > 0
+          ? progressResult.data.progresses
+              .map((p: any) => p.completed_at)
+              .filter(Boolean)
+              .sort()
+              .reverse()[0]
+          : undefined
+        
+        progressData.push({
+          id: enrollment.id,
+          courseName: enrollment.course.title,
+          totalSessions,
+          completedSessions,
+          progress: enrollment.progress_percent || (totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0),
+          status: enrollment.status === 'active' 
+            ? (enrollment.progress_percent === 100 ? 'completed' : 'in-progress')
+            : 'not-started',
+          lastActivity: lastActivity ? new Date(lastActivity).toISOString().split('T')[0] : undefined,
+        })
+      }
+      
+      setEnrollments(progressData)
+    } catch (error) {
+      console.error('Error loading progress data:', error)
+      setEnrollments([])
+    } finally {
+      setIsLoadingProgress(false)
+    }
+  }
+
+  const loadProfileData = async () => {
+    try {
+      setIsLoadingProfile(true)
+      setIsInitialLoad(true) // Đánh dấu đang load data
+      
+      // Load profile
+      const profileResult = await userProfileApi.getProfile()
+      if (profileResult.success && profileResult.data) {
+        const profile = profileResult.data
+        if (profile.current_due_date) {
+          setDueDate(profile.current_due_date)
+        }
+      }
+      
+      // Load pregnancies
+      const pregnanciesResult = await userProfileApi.getPregnancies()
+      if (pregnanciesResult.success && pregnanciesResult.data) {
+        const activePregnancy = pregnanciesResult.data.find(p => p.status === 'active')
+        if (activePregnancy) {
+          setActivePregnancyId(activePregnancy.id)
+          if (activePregnancy.due_date && !dueDate) {
+            setDueDate(activePregnancy.due_date)
+          }
+        }
+      }
+      
+      // Load children
+      const childrenResult = await userProfileApi.getChildren()
+      if (childrenResult.success && childrenResult.data) {
+        const childrenData: ChildInfo[] = childrenResult.data.map(child => {
+          const birthDate = new Date(child.birth_date)
+          const today = new Date()
+          const ageInMonths = child.age_in_months || Math.floor((today.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24 * 30.44))
+          const ageText = ageInMonths < 12 
+            ? `${ageInMonths} tháng` 
+            : `${Math.floor(ageInMonths / 12)} tuổi ${ageInMonths % 12} tháng`
+          
+          return {
+            id: child.id,
+            name: child.name,
+            birthDate: child.birth_date,
+            age: ageText
+          }
+        })
+        setChildren(childrenData)
+      }
+    } catch (error) {
+      console.error('Error loading profile data:', error)
+    } finally {
+      setIsLoadingProfile(false)
+      // Đợi một chút để đảm bảo state đã được update
+      setTimeout(() => setIsInitialLoad(false), 100)
+    }
+  }
   
   // Calculate pregnancy weeks from due date
   const calculatePregnancyWeeks = (dueDateStr: string) => {
@@ -1016,38 +1201,153 @@ export default function DashboardPage() {
     return weeks > 0 && weeks <= 40 ? weeks : null
   }
   
+  // Handler khi user thay đổi dueDate
+  const handleDueDateChange = async (newDueDate: string) => {
+    setDueDate(newDueDate)
+    
+    // Tính toán tuần thai
+    const weeks = calculatePregnancyWeeks(newDueDate)
+    setPregnancyWeeks(weeks)
+    
+    // Chỉ save khi không phải là lần đầu load data
+    if (!isInitialLoad && !isLoadingProfile) {
+      await saveDueDateToAPI(newDueDate)
+    }
+  }
+
   useEffect(() => {
     if (dueDate) {
+      // Chỉ tính toán tuần thai khi load data
       const weeks = calculatePregnancyWeeks(dueDate)
       setPregnancyWeeks(weeks)
     } else {
       setPregnancyWeeks(null)
     }
   }, [dueDate])
-  
-  const handleAddChild = () => {
-    if (newChild.name && newChild.birthDate) {
-      const birthDate = new Date(newChild.birthDate)
-      const today = new Date()
-      const ageInMonths = Math.floor((today.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24 * 30.44))
-      const ageText = ageInMonths < 12 
-        ? `${ageInMonths} tháng` 
-        : `${Math.floor(ageInMonths / 12)} tuổi ${ageInMonths % 12} tháng`
+
+  const saveDueDateToAPI = async (newDueDate: string) => {
+    try {
+      // Load pregnancies từ API để kiểm tra thực tế (không dựa vào state)
+      // Đảm bảo không tạo duplicate và chỉ có 1 active pregnancy tại một thời điểm
+      const pregnanciesResult = await userProfileApi.getPregnancies()
+      const activePregnancy = pregnanciesResult.success && pregnanciesResult.data
+        ? pregnanciesResult.data.find(p => p.status === 'active')
+        : null
+
+      // First, ensure profile exists
+      const profileResult = await userProfileApi.getProfile()
       
-      const child: ChildInfo = {
-        id: Date.now().toString(),
-        name: newChild.name,
-        birthDate: newChild.birthDate,
-        age: ageText
+      if (profileResult.success && profileResult.data) {
+        // Update profile with current_due_date
+        await userProfileApi.updateProfile({
+          current_due_date: newDueDate,
+        })
+        
+        // Kiểm tra pregnancies từ API thay vì chỉ dựa vào state
+        if (!activePregnancy) {
+          // Không có active pregnancy, tạo mới
+          const pregnancyResult = await userProfileApi.createPregnancy({
+            due_date: newDueDate,
+            pregnancy_weeks: calculatePregnancyWeeks(newDueDate) || undefined,
+          })
+          if (pregnancyResult.success && pregnancyResult.data) {
+            setActivePregnancyId(pregnancyResult.data.id)
+          }
+        } else {
+          // Đã có active pregnancy, update nó thay vì tạo mới
+          await userProfileApi.updatePregnancy(activePregnancy.id, {
+            due_date: newDueDate,
+            pregnancy_weeks: calculatePregnancyWeeks(newDueDate) || undefined,
+          })
+          setActivePregnancyId(activePregnancy.id)
+        }
+      } else {
+        // Profile doesn't exist, create it
+        const createProfileResult = await userProfileApi.updateProfile({
+          user_type: 'pregnant',
+          current_due_date: newDueDate,
+        })
+        
+        if (createProfileResult.success && createProfileResult.data) {
+          // Kiểm tra lại pregnancies sau khi tạo profile
+          const checkPregnanciesResult = await userProfileApi.getPregnancies()
+          const checkActivePregnancy = checkPregnanciesResult.success && checkPregnanciesResult.data
+            ? checkPregnanciesResult.data.find(p => p.status === 'active')
+            : null
+
+          if (!checkActivePregnancy) {
+            // Chỉ tạo mới nếu thực sự chưa có active pregnancy
+            const pregnancyResult = await userProfileApi.createPregnancy({
+              due_date: newDueDate,
+              pregnancy_weeks: calculatePregnancyWeeks(newDueDate) || undefined,
+            })
+            if (pregnancyResult.success && pregnancyResult.data) {
+              setActivePregnancyId(pregnancyResult.data.id)
+            }
+          } else {
+            // Đã có active pregnancy (có thể được tạo từ backend), update nó
+            await userProfileApi.updatePregnancy(checkActivePregnancy.id, {
+              due_date: newDueDate,
+              pregnancy_weeks: calculatePregnancyWeeks(newDueDate) || undefined,
+            })
+            setActivePregnancyId(checkActivePregnancy.id)
+          }
+        }
       }
-      setChildren([...children, child])
-      setNewChild({ name: '', birthDate: '' })
-      setShowAddChildForm(false)
+    } catch (error) {
+      console.error('Error saving due date:', error)
     }
   }
   
-  const handleDeleteChild = (id: string) => {
-    setChildren(children.filter(c => c.id !== id))
+  const handleAddChild = async () => {
+    if (newChild.name && newChild.birthDate) {
+      try {
+        const result = await userProfileApi.createChild({
+          name: newChild.name,
+          birth_date: newChild.birthDate,
+          pregnancy_id: activePregnancyId || undefined,
+        })
+        
+        if (result.success && result.data) {
+          const child = result.data
+          const birthDate = new Date(child.birth_date)
+          const today = new Date()
+          const ageInMonths = child.age_in_months || Math.floor((today.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24 * 30.44))
+          const ageText = ageInMonths < 12 
+            ? `${ageInMonths} tháng` 
+            : `${Math.floor(ageInMonths / 12)} tuổi ${ageInMonths % 12} tháng`
+          
+          const childInfo: ChildInfo = {
+            id: child.id,
+            name: child.name,
+            birthDate: child.birth_date,
+            age: ageText
+          }
+          setChildren([...children, childInfo])
+          setNewChild({ name: '', birthDate: '' })
+          setShowAddChildForm(false)
+        } else {
+          alert('Không thể thêm con. Vui lòng thử lại.')
+        }
+      } catch (error) {
+        console.error('Error adding child:', error)
+        alert('Lỗi khi thêm con. Vui lòng thử lại.')
+      }
+    }
+  }
+  
+  const handleDeleteChild = async (id: string) => {
+    try {
+      const result = await userProfileApi.deleteChild(id)
+      if (result.success) {
+        setChildren(children.filter(c => c.id !== id))
+      } else {
+        alert('Không thể xóa con. Vui lòng thử lại.')
+      }
+    } catch (error) {
+      console.error('Error deleting child:', error)
+      alert('Lỗi khi xóa con. Vui lòng thử lại.')
+    }
   }
   
   // Support form state
@@ -1074,16 +1374,113 @@ export default function DashboardPage() {
     setProfileData(prev => ({ ...prev, [field]: value }))
   }
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      // Validate file size (max 1MB)
+      if (file.size > 1 * 1024 * 1024) {
+        alert('Kích thước file không được vượt quá 1MB')
+        return
+      }
+
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+      if (!allowedTypes.includes(file.type)) {
+        alert('Chỉ chấp nhận file ảnh định dạng JPEG, PNG, GIF, hoặc WebP')
+        return
+      }
+
+      // Update UI immediately
       setProfileData(prev => ({ ...prev, avatar: file }))
+
+      // Upload to server
+      try {
+        console.log('[Dashboard] Starting avatar upload:', {
+          filename: file.name,
+          size: file.size,
+          type: file.type,
+        })
+
+        const result = await profileApi.uploadAvatar(file)
+        
+        console.log('[Dashboard] Upload result:', result)
+        
+        if (result.success && result.data) {
+          // Backend returns full user object, extract avatar_url
+          const userData = result.data as any
+          const avatarUrl = userData?.avatar_url || null
+          console.log('[Dashboard] Avatar URL from backend:', avatarUrl)
+          
+          const normalizedUrl = normalizeAvatarUrl(avatarUrl)
+          console.log('[Dashboard] Normalized avatar URL:', normalizedUrl)
+          
+          // Update avatar URL from response (normalize to relative URL)
+          setProfileData(prev => ({ ...prev, avatarUrl: normalizedUrl }))
+          
+          // Refresh user data to get latest info
+          await refreshUser()
+          
+          alert('Cập nhật ảnh đại diện thành công!')
+        } else {
+          console.error('[Dashboard] Upload avatar error:', result.error)
+          alert(result.error || 'Có lỗi xảy ra khi upload ảnh')
+          // Reset avatar on error
+          setProfileData(prev => ({ ...prev, avatar: null }))
+        }
+      } catch (error) {
+        console.error('[Dashboard] Error uploading avatar:', error)
+        alert('Có lỗi xảy ra khi upload ảnh. Vui lòng thử lại.')
+        // Reset avatar on error
+        setProfileData(prev => ({ ...prev, avatar: null }))
+      }
     }
   }
 
-  const handleSaveProfile = () => {
-    // Save profile logic
-    console.log('Saving profile:', profileData)
+  const handleSaveProfile = async () => {
+    try {
+      // Format birthDate từ DD/MM/YYYY sang YYYY-MM-DD nếu cần
+      let dob: string | undefined = undefined
+      if (profileData.birthDate && profileData.birthDate !== '**/**/1988') {
+        // Nếu format là DD/MM/YYYY, convert sang YYYY-MM-DD
+        const dateParts = profileData.birthDate.split('/')
+        if (dateParts.length === 3) {
+          dob = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`
+        } else {
+          // Nếu đã là YYYY-MM-DD thì dùng trực tiếp
+          dob = profileData.birthDate
+        }
+      }
+
+      // Update profile
+      // Xử lý address: chỉ gửi nếu có giá trị thực sự (không phải placeholder)
+      const addressValue = profileData.address && 
+                           profileData.address !== 'xxx xxx xxx xxx xxx xx' && 
+                           profileData.address.trim() !== '' 
+                           ? profileData.address.trim() 
+                           : undefined;
+
+      const result = await profileApi.updateProfile({
+        name: profileData.username,
+        phone: profileData.phone !== '*******39' ? profileData.phone : undefined,
+        address: addressValue, // Gửi address để lưu vào database
+        gender: profileData.gender || undefined,
+        dob: dob,
+      })
+
+      if (result.success) {
+        // Update user context nếu cần
+        if (result.data) {
+          // Refresh user data
+          await refreshUser()
+        }
+        alert('Cập nhật thông tin thành công!')
+      } else {
+        alert(result.error || 'Có lỗi xảy ra khi cập nhật thông tin')
+      }
+    } catch (error) {
+      console.error('Error saving profile:', error)
+      alert('Có lỗi xảy ra khi cập nhật thông tin. Vui lòng thử lại.')
+    }
   }
 
   // Calendar helpers
@@ -1157,23 +1554,19 @@ export default function DashboardPage() {
                     </div>
                     
                     <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <Label htmlFor="email">Email</Label>
-                        <button className="text-sm text-[#F441A5] hover:underline">Cập nhật</button>
-                      </div>
+                      <Label htmlFor="email">Email</Label>
                       <Input
                         id="email"
                         value={profileData.email}
                         onChange={(e) => handleProfileChange('email', e.target.value)}
                         className="mt-1"
+                        disabled // Email thường không cho phép thay đổi, cần xác thực
                       />
+                      <p className="text-xs text-gray-500 mt-1">Email không thể thay đổi</p>
                     </div>
                     
                     <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <Label htmlFor="phone">Số điện thoại</Label>
-                        <button className="text-sm text-[#F441A5] hover:underline">Cập nhật</button>
-                      </div>
+                      <Label htmlFor="phone">Số điện thoại</Label>
                       <Input
                         id="phone"
                         value={profileData.phone}
@@ -1247,10 +1640,23 @@ export default function DashboardPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => {
-                                setDueDate('')
-                                if (typeof window !== 'undefined') {
-                                  localStorage.removeItem('userDueDate')
+                              onClick={async () => {
+                                try {
+                                  if (activePregnancyId) {
+                                    // Update pregnancy status to cancelled
+                                    await userProfileApi.updatePregnancy(activePregnancyId, {
+                                      status: 'cancelled'
+                                    })
+                                    setActivePregnancyId(null)
+                                  }
+                                  // Update profile
+                                  await userProfileApi.updateProfile({
+                                    current_due_date: undefined,
+                                  })
+                                  setDueDate('')
+                                } catch (error) {
+                                  console.error('Error removing due date:', error)
+                                  alert('Lỗi khi xóa ngày dự sinh. Vui lòng thử lại.')
                                 }
                               }}
                               className="text-red-500 hover:text-red-700 h-6 px-2"
@@ -1261,7 +1667,7 @@ export default function DashboardPage() {
                           <Input
                             type="date"
                             value={dueDate}
-                            onChange={(e) => setDueDate(e.target.value)}
+                            onChange={(e) => handleDueDateChange(e.target.value)}
                             className="mb-2"
                           />
                           <p className="text-sm text-gray-600 mb-1">
@@ -1297,10 +1703,17 @@ export default function DashboardPage() {
                                 <Label className="text-xs text-gray-600 mb-1 block">Tên con</Label>
                                 <Input
                                   value={child.name}
-                                  onChange={(e) => {
+                                  onChange={async (e) => {
+                                    const newName = e.target.value
                                     setChildren(children.map(c => 
-                                      c.id === child.id ? { ...c, name: e.target.value } : c
+                                      c.id === child.id ? { ...c, name: newName } : c
                                     ))
+                                    // Save to API
+                                    try {
+                                      await userProfileApi.updateChild(child.id, { name: newName })
+                                    } catch (error) {
+                                      console.error('Error updating child name:', error)
+                                    }
                                   }}
                                   className="font-medium"
                                   placeholder="Nhập tên con"
@@ -1311,7 +1724,7 @@ export default function DashboardPage() {
                                 <Input
                                   type="date"
                                   value={child.birthDate}
-                                  onChange={(e) => {
+                                  onChange={async (e) => {
                                     const newBirthDate = e.target.value
                                     const birthDate = new Date(newBirthDate)
                                     const today = new Date()
@@ -1322,6 +1735,15 @@ export default function DashboardPage() {
                                     setChildren(children.map(c => 
                                       c.id === child.id ? { ...c, birthDate: newBirthDate, age: ageText } : c
                                     ))
+                                    // Save to API
+                                    try {
+                                      await userProfileApi.updateChild(child.id, { 
+                                        birth_date: newBirthDate,
+                                        age_in_months: ageInMonths
+                                      })
+                                    } catch (error) {
+                                      console.error('Error updating child birth date:', error)
+                                    }
                                   }}
                                 />
                               </div>
@@ -1343,30 +1765,25 @@ export default function DashboardPage() {
                         </div>
                       )}
                       
-                      {/* Form nhập ngày dự sinh - Hiển thị để thêm chu kỳ mang thai mới */}
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
+                      {/* Form nhập ngày dự sinh - Chỉ hiển thị khi chưa có dueDate */}
+                      {!dueDate && (
+                        <div>
                           <Label htmlFor="dueDate" className="text-sm font-medium text-gray-700">
-                            {dueDate ? 'Thêm chu kỳ mang thai mới' : 'Ngày dự sinh'}
+                            Ngày dự sinh
                           </Label>
-                          {dueDate && (
-                            <span className="text-xs text-gray-500">(Thay đổi ngày dự sinh hiện tại)</span>
-                          )}
+                          <Input
+                            id="dueDate"
+                            type="date"
+                            value={dueDate}
+                            onChange={(e) => handleDueDateChange(e.target.value)}
+                            className="mt-1"
+                            placeholder="Chọn ngày dự sinh"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Nhập ngày dự sinh nếu bạn đang mang thai
+                          </p>
                         </div>
-                        <Input
-                          id="dueDate"
-                          type="date"
-                          value={dueDate}
-                          onChange={(e) => setDueDate(e.target.value)}
-                          className="mt-1"
-                          placeholder="Chọn ngày dự sinh"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">
-                          {dueDate 
-                            ? 'Cập nhật ngày dự sinh cho chu kỳ mang thai hiện tại' 
-                            : 'Nhập ngày dự sinh nếu bạn đang mang thai hoặc muốn thêm chu kỳ mang thai mới'}
-                        </p>
-                      </div>
+                      )}
                       
                       {/* Thêm con */}
                       {!showAddChildForm ? (
@@ -1448,6 +1865,15 @@ export default function DashboardPage() {
                             width={128}
                             height={128}
                             className="w-full h-full object-cover"
+                          />
+                        ) : profileData.avatarUrl ? (
+                          <Image
+                            src={getFullAvatarUrl(profileData.avatarUrl) || profileData.avatarUrl}
+                            alt="Avatar"
+                            width={128}
+                            height={128}
+                            className="w-full h-full object-cover"
+                            unoptimized
                           />
                         ) : (
                           <User className="h-16 w-16 text-gray-400" />
@@ -1710,7 +2136,8 @@ export default function DashboardPage() {
         )
       
       case 'schedule':
-        const scheduleMonth = new Date(2025, parseInt(selectedMonth) - 1, 1)
+        const currentYear = new Date().getFullYear()
+        const scheduleMonth = new Date(currentYear, parseInt(selectedMonth) - 1, 1)
         const scheduleDaysInMonth = getDaysInMonth(scheduleMonth)
         const scheduleFirstDay = getFirstDayOfMonth(scheduleMonth)
         const scheduleDays = []
@@ -1728,30 +2155,25 @@ export default function DashboardPage() {
         const scheduleWeekDays = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']
         
         // Filter sessions based on selected package and month
-        const filteredSessions = mockUserSessions.filter(session => {
+        const filteredSessions = (isLoadingSessions ? [] : userSessions).filter(session => {
           const sessionDate = new Date(session.date)
           const sessionMonth = sessionDate.getMonth() + 1
-          if (parseInt(selectedMonth) !== sessionMonth) return false
+          const sessionYear = sessionDate.getFullYear()
+          
+          // Filter by month (compare month and year)
+          if (parseInt(selectedMonth) !== sessionMonth || currentYear !== sessionYear) return false
+          
+          // Filter by package (if not 'all')
           if (selectedPackage === 'all') return true
           
-          // Map package IDs to course names
-          const packageMap: Record<string, string> = {
-            'me-bau': 'Dành cho mẹ bầu',
-            '0-12': '0-12 tháng',
-            '13-24': '13-24 tháng',
-            'trial-99k': 'Gói học thử 01 buổi 99K',
-            'trial-me-bau': 'Gói học thử 01 buổi 99K',
-            'trial-0-26': 'Gói học thử 01 buổi 99K',
-            'combo-6': 'Gói combo 06 buổi',
-            'combo-1': 'Gói combo 06 buổi',
-            'combo-2': 'Gói combo 06 buổi',
-            '3month': 'Gói 03 tháng',
-            '6month': 'Gói 06 tháng',
-            '12month': 'Gói 12 tháng',
-          }
+          // For now, if selectedPackage is a course_id, match it
+          // Otherwise, try to match by course name (fallback for old mock data)
+          if (selectedPackage === session.course_id) return true
           
-          const courseName = packageMap[selectedPackage] || selectedPackage
-          return session.course.toLowerCase().includes(courseName.toLowerCase())
+          // Fallback: match by course name (for compatibility)
+          const courseName = session.course.toLowerCase()
+          return courseName.includes(selectedPackage.toLowerCase()) || 
+                 selectedPackage.toLowerCase().includes(courseName)
         })
         
         const getSessionsForScheduleDate = (date: Date) => {
@@ -1775,34 +2197,32 @@ export default function DashboardPage() {
           )
         }
         
-        // Course packages structure with nested items
-        const coursePackagesList = [
-          { id: 'me-bau', name: 'Dành cho mẹ bầu', hasChildren: false },
-          { id: '0-12', name: 'Dành cho mẹ có con từ 0 - 12 tháng', hasChildren: false },
-          { id: '13-24', name: 'Dành cho mẹ có con từ 13 - 24 tháng', hasChildren: false },
-          { 
-            id: 'trial-99k', 
-            name: 'Gói học thử 01 buổi 99K', 
-            hasChildren: true,
-            children: [
-              { id: 'trial-me-bau', name: 'Dành cho mẹ bầu' },
-              { id: 'trial-0-26', name: 'Dành cho mẹ có con từ 0 - 26 tháng' }
-            ]
-          },
-          { 
-            id: 'combo-6', 
-            name: 'Gói combo 06 buổi', 
-            hasChildren: true,
-            children: [
-              { id: 'combo-1', name: 'Gói 01' },
-              { id: 'combo-2', name: 'Gói 02' }
-            ]
-          },
-          { id: '3month', name: 'Gói 03 tháng', hasChildren: false },
-          { id: '6month', name: 'Gói 06 tháng', hasChildren: false },
-          { id: '12month', name: 'Gói 12 tháng', hasChildren: false },
-          { id: 'all', name: 'Tất cả các gói học', hasChildren: false }
-        ]
+        // Course packages structure - dynamically built from userSessions
+        const coursePackagesList = (() => {
+          const packages: Array<{ id: string; name: string; hasChildren: boolean; children?: Array<{ id: string; name: string }> }> = [{ id: 'all', name: 'Tất cả các gói học', hasChildren: false }]
+          
+          // Get unique courses from userSessions
+          const uniqueCourses = new Map<string, { id: string; name: string }>()
+          userSessions.forEach(session => {
+            if (session.course_id && !uniqueCourses.has(session.course_id)) {
+              uniqueCourses.set(session.course_id, {
+                id: session.course_id,
+                name: session.course
+              })
+            }
+          })
+          
+          // Add courses to list
+          uniqueCourses.forEach((course, courseId) => {
+            packages.push({
+              id: courseId,
+              name: course.name,
+              hasChildren: false
+            })
+          })
+          
+          return packages
+        })()
         
         const togglePackage = (packageId: string) => {
           setExpandedPackages(prev => {
@@ -1838,6 +2258,12 @@ export default function DashboardPage() {
             {/* Header */}
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">LỊCH HỌC THEO GÓI</h1>
+              {isLoadingSessions && (
+                <div className="flex items-center gap-2 text-gray-600 mt-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm">Đang tải lịch học...</span>
+                </div>
+              )}
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -2063,8 +2489,26 @@ export default function DashboardPage() {
               <p className="text-gray-600">Theo dõi tiến độ học tập của bạn</p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {mockProgress.map((course) => (
+            {isLoadingProgress ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-[#F441A5]" />
+                <span className="ml-3 text-gray-600">Đang tải dữ liệu...</span>
+              </div>
+            ) : enrollments.length === 0 ? (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <BookOpen className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Chưa có khóa học nào</h3>
+                  <p className="text-gray-600 mb-4">Bạn chưa đăng ký khóa học nào. Hãy đăng ký khóa học để bắt đầu!</p>
+                  <Button onClick={() => router.push('/courses')} className="btn-gradient-pink">
+                    Xem các khóa học
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {enrollments.map((course) => (
                 <Card key={course.id} className="h-full">
                   <CardContent className="p-6">
                     <div className="space-y-4">
@@ -2120,44 +2564,102 @@ export default function DashboardPage() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-            
-            {/* Summary Card */}
-            <Card className="bg-gradient-to-r from-[#F441A5]/10 to-[#FF5F6D]/10 border-[#F441A5]/20">
-              <CardContent className="p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Tổng quan</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-[#F441A5]">
-                      {mockProgress.reduce((sum, c) => sum + c.completedSessions, 0)}
-                    </div>
-                    <div className="text-sm text-gray-600 mt-1">Buổi đã hoàn thành</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-[#F441A5]">
-                      {mockProgress.reduce((sum, c) => sum + c.totalSessions - c.completedSessions, 0)}
-                    </div>
-                    <div className="text-sm text-gray-600 mt-1">Buổi còn lại</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-[#F441A5]">
-                      {Math.round(mockProgress.reduce((sum, c) => sum + c.progress, 0) / mockProgress.length)}%
-                    </div>
-                    <div className="text-sm text-gray-600 mt-1">Tiến độ trung bình</div>
-                  </div>
+                  ))}
                 </div>
-              </CardContent>
-            </Card>
+                
+                {/* Summary Card */}
+                <Card className="bg-gradient-to-r from-[#F441A5]/10 to-[#FF5F6D]/10 border-[#F441A5]/20">
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">Tổng quan</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-[#F441A5]">
+                          {enrollments.reduce((sum, c) => sum + c.completedSessions, 0)}
+                        </div>
+                        <div className="text-sm text-gray-600 mt-1">Buổi đã hoàn thành</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-[#F441A5]">
+                          {enrollments.reduce((sum, c) => sum + c.totalSessions - c.completedSessions, 0)}
+                        </div>
+                        <div className="text-sm text-gray-600 mt-1">Buổi còn lại</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-[#F441A5]">
+                          {enrollments.length > 0 ? Math.round(enrollments.reduce((sum, c) => sum + c.progress, 0) / enrollments.length) : 0}%
+                        </div>
+                        <div className="text-sm text-gray-600 mt-1">Tiến độ trung bình</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </motion.div>
         )
       
       case 'payment':
+        // Transform orders to payment records format
+        const paymentRecords = orders.flatMap(order => {
+          // Get the first payment for this order (or use order as payment if no payment exists)
+          const payment = order.payments && order.payments.length > 0 
+            ? order.payments[0] 
+            : null
+          
+          // Get course name from order items
+          const courseName = order.items && order.items.length > 0 && order.items[0].course
+            ? order.items[0].course.title
+            : 'Khóa học'
+          
+          // Determine payment status
+          let status: 'paid' | 'pending' | 'failed' = 'pending'
+          if (payment) {
+            if (payment.status === 'completed' || payment.status === 'paid') {
+              status = 'paid'
+            } else if (payment.status === 'failed' || payment.status === 'cancelled') {
+              status = 'failed'
+            } else {
+              status = 'pending'
+            }
+          } else if (order.status === 'completed') {
+            status = 'paid'
+          } else if (order.status === 'cancelled') {
+            status = 'failed'
+          }
+          
+          // Get payment date
+          const paymentDate = payment?.paid_at 
+            ? new Date(payment.paid_at).toISOString().split('T')[0]
+            : order.created_at 
+            ? new Date(order.created_at).toISOString().split('T')[0]
+            : new Date().toISOString().split('T')[0]
+          
+          // Get payment method
+          const paymentMethod = payment?.payment_method || order.payment_method || 'Chưa chọn'
+          
+          // Generate invoice number from order number
+          const invoiceNumber = order.order_number.replace('ORD-', 'INV-')
+          
+          return {
+            id: order.id,
+            packageName: courseName,
+            amount: order.total_amount,
+            paymentDate,
+            status,
+            paymentMethod: paymentMethod === 'zalopay' ? 'ZaloPay' 
+              : paymentMethod === 'vnpay' ? 'VNPay'
+              : paymentMethod === 'momo' ? 'MoMo'
+              : paymentMethod,
+            invoiceNumber,
+            orderNumber: order.order_number,
+          }
+        })
+        
         // Calculate pagination
-        const totalPaymentPages = Math.ceil(mockPayments.length / paymentsPerPage)
+        const totalPaymentPages = Math.ceil(paymentRecords.length / paymentsPerPage)
         const startIndex = (paymentPage - 1) * paymentsPerPage
         const endIndex = startIndex + paymentsPerPage
-        const currentPagePayments = mockPayments.slice(startIndex, endIndex)
+        const currentPagePayments = paymentRecords.slice(startIndex, endIndex)
         
         return (
           <motion.div
@@ -2169,6 +2671,12 @@ export default function DashboardPage() {
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-2">Thanh toán & Gói học</h2>
               <p className="text-gray-600">Quản lý thanh toán và gói học của bạn</p>
+              {isLoadingPayments && (
+                <div className="flex items-center gap-2 text-gray-600 mt-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm">Đang tải dữ liệu thanh toán...</span>
+                </div>
+              )}
             </div>
             
             {/* Summary Cards */}
@@ -2179,7 +2687,7 @@ export default function DashboardPage() {
                     <div>
                       <p className="text-sm text-gray-600 mb-1">Tổng đã thanh toán</p>
                       <p className="text-2xl font-bold text-gray-900">
-                        {formatCurrency(mockPayments.reduce((sum, p) => sum + p.amount, 0))}
+                        {formatCurrency(paymentRecords.filter(p => p.status === 'paid').reduce((sum, p) => sum + p.amount, 0))}
                       </p>
                     </div>
                     <CheckCircle2 className="h-10 w-10 text-green-500" />
@@ -2192,7 +2700,7 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-600 mb-1">Số gói đã mua</p>
-                      <p className="text-2xl font-bold text-gray-900">{mockPayments.length}</p>
+                      <p className="text-2xl font-bold text-gray-900">{paymentRecords.length}</p>
                     </div>
                     <BookOpen className="h-10 w-10 text-[#F441A5]" />
                   </div>
@@ -2205,7 +2713,7 @@ export default function DashboardPage() {
                     <div>
                       <p className="text-sm text-gray-600 mb-1">Gói đang học</p>
                       <p className="text-2xl font-bold text-gray-900">
-                        {mockProgress.filter(p => p.status === 'in-progress').length}
+                        {enrollments.filter(p => p.status === 'in-progress').length}
                       </p>
                     </div>
                     <TrendingUp className="h-10 w-10 text-blue-500" />
@@ -2220,11 +2728,25 @@ export default function DashboardPage() {
                 <div className="p-6 border-b flex items-center justify-between">
                   <h3 className="text-lg font-bold text-gray-900">Lịch sử thanh toán</h3>
                   <span className="text-sm text-gray-600">
-                    Hiển thị {startIndex + 1}-{Math.min(endIndex, mockPayments.length)} / {mockPayments.length} hóa đơn
+                    {paymentRecords.length === 0 ? (
+                      'Chưa có hóa đơn nào'
+                    ) : (
+                      `Hiển thị ${startIndex + 1}-${Math.min(endIndex, paymentRecords.length)} / ${paymentRecords.length} hóa đơn`
+                    )}
                   </span>
                 </div>
                 <div className="divide-y divide-gray-200">
-                  {currentPagePayments.map((payment) => (
+                  {paymentRecords.length === 0 ? (
+                    <div className="p-12 text-center">
+                      <CreditCard className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Chưa có đơn hàng nào</h3>
+                      <p className="text-gray-600 mb-4">Bạn chưa có đơn hàng nào. Hãy đăng ký khóa học để bắt đầu!</p>
+                      <Button onClick={() => router.push('/courses')} className="btn-gradient-pink">
+                        Xem các khóa học
+                      </Button>
+                    </div>
+                  ) : (
+                    currentPagePayments.map((payment) => (
                     <div key={payment.id} className="p-6 hover:bg-gray-50 transition-colors">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -2270,7 +2792,8 @@ export default function DashboardPage() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                    ))
+                  )}
                 </div>
                 
                 {/* Pagination */}

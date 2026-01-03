@@ -10,6 +10,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
 import User from '../models/User';
+import { UserProfile, UserPregnancy, UserChild } from '../models';
 import { getJWTSecret } from '../utils/jwtSecret';
 import { AuthRequest } from '../middleware/auth';
 
@@ -25,11 +26,14 @@ const getGoogleOAuthClient = (): OAuth2Client | null => {
 /**
  * Register new user
  * POST /api/public/auth/register
- * Body: { email, password, name, phone? }
+ * Body: { email, password, name, phone?, userType?, dueDate?, childAge? }
+ * userType: 'pregnant' | 'mom'
+ * dueDate: Date string (YYYY-MM-DD) - nếu là mẹ bầu
+ * childAge: number (months) - nếu là mẹ bỉm
  */
 export const register = async (req: AuthRequest, res: Response) => {
   try {
-    const { email, password, name, phone } = req.body;
+    const { email, password, name, phone, location, address, userType, dueDate, childAge } = req.body;
 
     // Validate input
     if (!email || !password || !name) {
@@ -53,14 +57,79 @@ export const register = async (req: AuthRequest, res: Response) => {
 
     // Create user
     // Theo DATABASE_DESIGN_IPD8_TABLES_REFACTOR.md: role default là 'guest'
+    // Map location từ frontend sang address trong database
+    const userAddress = address || location || null;
+    
     const user = await User.create({
       email,
       password_hash: hashedPassword,
       name,
       phone: phone || null,
+      address: userAddress, // Lưu địa chỉ vào database
       role: 'guest', // Default role cho user đăng ký mới
       is_active: true,
     });
+
+    // Create user profile if userType is provided
+    if (userType && ['pregnant', 'mom'].includes(userType)) {
+      const profileData: any = {
+        user_id: user.id,
+        user_type: userType,
+      };
+
+      if (userType === 'pregnant' && dueDate) {
+        profileData.current_due_date = dueDate;
+      }
+
+      const profile = await UserProfile.create(profileData);
+
+      // Create pregnancy if dueDate provided
+      if (userType === 'pregnant' && dueDate) {
+        // Kiểm tra xem đã có active pregnancy chưa (đảm bảo không duplicate)
+        // Trong cùng một thời điểm không thể có nhiều hơn 1 chu kỳ thai active
+        const existingActivePregnancy = await UserPregnancy.findOne({
+          where: {
+            user_id: user.id,
+            status: 'active',
+          },
+        });
+
+        // Chỉ tạo mới nếu chưa có active pregnancy
+        if (!existingActivePregnancy) {
+          // Calculate pregnancy weeks
+          const due = new Date(dueDate);
+          const today = new Date();
+          const diffTime = due.getTime() - today.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          const pregnancyWeeks = Math.floor((280 - diffDays) / 7); // 280 days = 40 weeks
+          
+          await UserPregnancy.create({
+            user_id: user.id,
+            user_profile_id: profile.id,
+            due_date: dueDate,
+            pregnancy_weeks: (pregnancyWeeks > 0 && pregnancyWeeks <= 42) ? pregnancyWeeks : null,
+            status: 'active',
+          });
+        }
+      }
+
+      // Create child if childAge provided (for mom type)
+      if (userType === 'mom' && childAge) {
+        const ageMonths = parseInt(childAge);
+        if (!isNaN(ageMonths) && ageMonths >= 0) {
+          const today = new Date();
+          const birthDate = new Date(today.getFullYear(), today.getMonth() - ageMonths, today.getDate());
+          
+          await UserChild.create({
+            user_id: user.id,
+            user_profile_id: profile.id,
+            name: 'Con của bạn', // Default name, user can update later
+            birth_date: birthDate.toISOString().split('T')[0],
+            age_in_months: ageMonths,
+          });
+        }
+      }
+    }
 
     // Generate JWT token
     const jwtSecret = getJWTSecret();

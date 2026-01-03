@@ -18,7 +18,7 @@ interface AuthContextType {
   isAuthenticated: boolean
   isLoading: boolean
   login: (phone: string, password: string) => Promise<{ success: boolean; error?: string }>
-  register: (data: { email: string; password: string; name: string; phone: string; location?: string; age?: number }) => Promise<{ success: boolean; error?: string }>
+  register: (data: { email: string; password: string; name: string; phone: string; location?: string; age?: number; userType?: 'pregnant' | 'mom'; dueDate?: string; childAge?: number }) => Promise<{ success: boolean; error?: string }>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
 }
@@ -106,6 +106,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     phone: string
     location?: string
     age?: number
+    userType?: 'pregnant' | 'mom'
+    dueDate?: string
+    childAge?: number
   }): Promise<{ success: boolean; error?: string }> => {
     try {
       setIsLoading(true)
